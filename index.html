@@ -30,22 +30,22 @@
 <div id="clock" tabindex="0"></div>
 
 <div class="controls" id="controls">
-  <label>Formato:
+  <label id="lblFormat">Formato:
     <select id="format">
       <option value="24">24h</option>
       <option value="12">12h</option>
     </select>
   </label>
-  <label>Idioma:
+  <label id="lblLang">Idioma:
     <select id="language">
-      <option value="en">Inglés</option>
-      <option value="zh">Chino Mandarín</option>
-      <option value="hi">Hindi</option>
+      <option value="en">English</option>
+      <option value="zh">中文</option>
+      <option value="hi">हिन्दी</option>
       <option value="es" selected>Español</option>
-      <option value="ar">Árabe</option>
+      <option value="ar">العربية</option>
     </select>
   </label>
-  <label>Tamaño:
+  <label id="lblSize">Tamaño:
     <select id="size">
       <option value="25">25%</option>
       <option value="50">50%</option>
@@ -56,7 +56,7 @@
       <option value="300">300%</option>
     </select>
   </label>
-  <label>Fuente:
+  <label id="lblFont">Fuente:
     <select id="font">
       <option value="monospace">Monospace</option>
       <option value="sans-serif">Sans Serif</option>
@@ -64,13 +64,13 @@
       <option value="'Courier New', monospace">Courier</option>
     </select>
   </label>
-  <label>Color números:
+  <label id="lblColor">Color números:
     <input type="color" id="color" value="#00ff00">
   </label>
-  <label>Color fondo:
+  <label id="lblBg">Color fondo:
     <input type="color" id="bgcolor" value="#000000">
   </label>
-  <label>Alarma:
+  <label id="lblAlarm">Alarma:
     <input type="time" id="alarmTime">
   </label>
   <button id="setAlarm">Activar</button>
@@ -92,26 +92,92 @@ const alarmSound = document.getElementById('alarmSound');
 const fullscreenBtn = document.getElementById('fullscreenBtn');
 const langSel = document.getElementById('language');
 const sizeSel = document.getElementById('size');
+const setAlarmBtn = document.getElementById('setAlarm');
+const clearAlarmBtn = document.getElementById('clearAlarm');
 
 let alarmTime = null;
 let alarmActive = false;
 let hideTimeout = null;
 
-// Cargar preferencias
-if(localStorage.getItem('prefs')){
-  const prefs = JSON.parse(localStorage.getItem('prefs'));
-  formatSel.value = prefs.format;
-  fontSel.value = prefs.font;
-  colorSel.value = prefs.color;
-  bgSel.value = prefs.bg;
-  langSel.value = prefs.lang;
-  sizeSel.value = prefs.size;
-  document.body.style.fontFamily = prefs.font;
-  document.body.style.color = prefs.color;
-  document.body.style.backgroundColor = prefs.bg;
-  clock.style.fontSize = (7.5 * (prefs.size/100)) + 'rem';
+// Diccionario de traducciones
+const translations = {
+  es: {
+    lblFormat: "Formato:",
+    lblLang: "Idioma:",
+    lblSize: "Tamaño:",
+    lblFont: "Fuente:",
+    lblColor: "Color números:",
+    lblBg: "Color fondo:",
+    lblAlarm: "Alarma:",
+    setAlarm: "Activar",
+    clearAlarm: "Quitar",
+    fullscreenBtn: "⛶ Pantalla completa"
+  },
+  en: {
+    lblFormat: "Format:",
+    lblLang: "Language:",
+    lblSize: "Size:",
+    lblFont: "Font:",
+    lblColor: "Number color:",
+    lblBg: "Background color:",
+    lblAlarm: "Alarm:",
+    setAlarm: "Set",
+    clearAlarm: "Clear",
+    fullscreenBtn: "⛶ Fullscreen"
+  },
+  zh: {
+    lblFormat: "格式:",
+    lblLang: "语言:",
+    lblSize: "大小:",
+    lblFont: "字体:",
+    lblColor: "数字颜色:",
+    lblBg: "背景颜色:",
+    lblAlarm: "闹钟:",
+    setAlarm: "设置",
+    clearAlarm: "清除",
+    fullscreenBtn: "⛶ 全屏"
+  },
+  hi: {
+    lblFormat: "प्रारूप:",
+    lblLang: "भाषा:",
+    lblSize: "आकार:",
+    lblFont: "फ़ॉन्ट:",
+    lblColor: "संख्या का रंग:",
+    lblBg: "पृष्ठभूमि का रंग:",
+    lblAlarm: "अलार्म:",
+    setAlarm: "सक्रिय करें",
+    clearAlarm: "हटाएं",
+    fullscreenBtn: "⛶ पूर्ण स्क्रीन"
+  },
+  ar: {
+    lblFormat: "التنسيق:",
+    lblLang: "اللغة:",
+    lblSize: "الحجم:",
+    lblFont: "الخط:",
+    lblColor: "لون الأرقام:",
+    lblBg: "لون الخلفية:",
+    lblAlarm: "المنبه:",
+    setAlarm: "تفعيل",
+    clearAlarm: "إزالة",
+    fullscreenBtn: "⛶ ملء الشاشة"
+  }
+};
+
+function applyTranslations(lang){
+  const t = translations[lang];
+  document.getElementById('lblFormat').childNodes[0].textContent = t.lblFormat + " ";
+  document.getElementById('lblLang').childNodes[0].textContent = t.lblLang + " ";
+  document.getElementById('lblSize').childNodes[0].textContent = t.lblSize + " ";
+  document.getElementById('lblFont').childNodes[0].textContent = t.lblFont + " ";
+  document.getElementById('lblColor').childNodes[0].textContent = t.lblColor + " ";
+  document.getElementById('lblBg').childNodes[0].textContent = t.lblBg + " ";
+  document.getElementById('lblAlarm').childNodes[0].textContent = t.lblAlarm + " ";
+  setAlarmBtn.textContent = t.setAlarm;
+  clearAlarmBtn.textContent = t.clearAlarm;
+  fullscreenBtn.textContent = t.fullscreenBtn;
 }
 
+// Guardar preferencias
 function savePrefs(){
   localStorage.setItem('prefs', JSON.stringify({
     format: formatSel.value,
@@ -159,53 +225,4 @@ updateClock();
 function showControls(){
   controls.style.display = 'flex';
   clearTimeout(hideTimeout);
-  hideTimeout = setTimeout(()=> controls.style.display = 'none', 10000);
-}
-
-clock.addEventListener('mouseenter', showControls);
-clock.addEventListener('click', showControls);
-clock.addEventListener('keydown', e=>{
-  if(e.key === 'Enter'){ showControls(); }
-});
-
-controls.addEventListener('mouseleave', ()=> controls.style.display = 'none');
-
-// Personalización
-formatSel.addEventListener('change', ()=>{ updateClock(); savePrefs(); });
-fontSel.addEventListener('change', ()=>{ document.body.style.fontFamily = fontSel.value; savePrefs(); });
-colorSel.addEventListener('input', ()=>{ document.body.style.color = colorSel.value; savePrefs(); });
-bgSel.addEventListener('input', ()=>{ document.body.style.backgroundColor = bgSel.value; savePrefs(); });
-langSel.addEventListener('change', ()=>{ document.documentElement.lang = langSel.value; savePrefs(); });
-sizeSel.addEventListener('change', ()=>{
-  clock.style.fontSize = (7.5 * (sizeSel.value/100)) + 'rem';
-  savePrefs();
-});
-
-// Alarma
-document.getElementById('setAlarm').addEventListener('click', ()=>{
-  if(alarmInput.value){
-    alarmTime = alarmInput.value;
-    alarmActive = true;
-    alert('Alarma configurada para ' + alarmTime);
-  }
-});
-document.getElementById('clearAlarm').addEventListener('click', ()=>{
-  alarmTime = null;
-  alarmActive = false;
-  alert('Alarma eliminada');
-});
-
-// Pantalla completa
-fullscreenBtn.addEventListener('click', ()=>{
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(err => {
-      console.warn(`No se pudo activar pantalla completa: ${err.message}`);
-    });
-  } else {
-    document.exitFullscreen();
-  }
-});
-</script>
-
-</body>
-</html>
+  hideTimeout = setTimeout(()=> controls.style.display = 'none', 
