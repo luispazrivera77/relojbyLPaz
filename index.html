@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reloj Minimalista</title>
+<title>Reloj Minimalista Multilenguaje</title>
 <style>
   body {
     margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -11,13 +11,13 @@
     transition: background 0.3s, color 0.3s;
   }
   #clock {
-    font-size: 7.5rem; /* 1.5 veces más grande */
+    font-size: 7.5rem;
     letter-spacing: 4px;
     cursor: pointer;
   }
   .controls {
     margin-top: 20px;
-    display: none; /* Ocultos por defecto */
+    display: none;
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
@@ -34,6 +34,26 @@
     <select id="format">
       <option value="24">24h</option>
       <option value="12">12h</option>
+    </select>
+  </label>
+  <label>Idioma:
+    <select id="language">
+      <option value="en">Inglés</option>
+      <option value="zh">Chino Mandarín</option>
+      <option value="hi">Hindi</option>
+      <option value="es" selected>Español</option>
+      <option value="ar">Árabe</option>
+    </select>
+  </label>
+  <label>Tamaño:
+    <select id="size">
+      <option value="25">25%</option>
+      <option value="50">50%</option>
+      <option value="75">75%</option>
+      <option value="100" selected>100%</option>
+      <option value="150">150%</option>
+      <option value="200">200%</option>
+      <option value="300">300%</option>
     </select>
   </label>
   <label>Fuente:
@@ -70,6 +90,8 @@ const bgSel = document.getElementById('bgcolor');
 const alarmInput = document.getElementById('alarmTime');
 const alarmSound = document.getElementById('alarmSound');
 const fullscreenBtn = document.getElementById('fullscreenBtn');
+const langSel = document.getElementById('language');
+const sizeSel = document.getElementById('size');
 
 let alarmTime = null;
 let alarmActive = false;
@@ -82,9 +104,12 @@ if(localStorage.getItem('prefs')){
   fontSel.value = prefs.font;
   colorSel.value = prefs.color;
   bgSel.value = prefs.bg;
+  langSel.value = prefs.lang;
+  sizeSel.value = prefs.size;
   document.body.style.fontFamily = prefs.font;
   document.body.style.color = prefs.color;
   document.body.style.backgroundColor = prefs.bg;
+  clock.style.fontSize = (7.5 * (prefs.size/100)) + 'rem';
 }
 
 function savePrefs(){
@@ -92,7 +117,9 @@ function savePrefs(){
     format: formatSel.value,
     font: fontSel.value,
     color: colorSel.value,
-    bg: bgSel.value
+    bg: bgSel.value,
+    lang: langSel.value,
+    size: sizeSel.value
   }));
 }
 
@@ -148,6 +175,11 @@ formatSel.addEventListener('change', ()=>{ updateClock(); savePrefs(); });
 fontSel.addEventListener('change', ()=>{ document.body.style.fontFamily = fontSel.value; savePrefs(); });
 colorSel.addEventListener('input', ()=>{ document.body.style.color = colorSel.value; savePrefs(); });
 bgSel.addEventListener('input', ()=>{ document.body.style.backgroundColor = bgSel.value; savePrefs(); });
+langSel.addEventListener('change', ()=>{ document.documentElement.lang = langSel.value; savePrefs(); });
+sizeSel.addEventListener('change', ()=>{
+  clock.style.fontSize = (7.5 * (sizeSel.value/100)) + 'rem';
+  savePrefs();
+});
 
 // Alarma
 document.getElementById('setAlarm').addEventListener('click', ()=>{
