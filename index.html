@@ -177,7 +177,6 @@ function applyTranslations(lang){
   fullscreenBtn.textContent = t.fullscreenBtn;
 }
 
-// Guardar preferencias
 function savePrefs(){
   localStorage.setItem('prefs', JSON.stringify({
     format: formatSel.value,
@@ -218,11 +217,15 @@ function updateClock(){
   }
 }
 
-setInterval(updateClock, 1000);
-updateClock();
-
 // Mostrar controles
 function showControls(){
   controls.style.display = 'flex';
   clearTimeout(hideTimeout);
-  hideTimeout = setTimeout(()=> controls.style.display = 'none', 
+  hideTimeout = setTimeout(()=> controls.style.display = 'none', 10000);
+}
+
+// Eventos para mostrar/ocultar
+clock.addEventListener('mouseenter', showControls);
+clock.addEventListener('click', showControls);
+clock.addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ showControls(); }
