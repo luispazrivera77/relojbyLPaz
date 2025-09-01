@@ -4,23 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reloj Minimalista</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
 <style>
   body {
     margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    height:100vh; font-family: monospace; background:#000; color:#0f0; transition: background 0.3s, color 0.3s;
+    height:100vh; font-family: monospace; background:#000; color:#0f0;
+    transition: background 0.3s, color 0.3s;
   }
-  #clock { font-size: 5rem; letter-spacing: 4px; }
-  .controls { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  #clock {
+    font-size: 7.5rem; /* 1.5 veces más grande */
+    letter-spacing: 4px;
+    cursor: pointer;
+  }
+  .controls {
+    margin-top: 20px;
+    display: none; /* Ocultos por defecto */
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
   label { font-size: 0.9rem; }
 </style>
 </head>
 <body>
 
-<div id="clock"></div>
+<div id="clock" tabindex="0"></div>
 
-<div class="controls">
+<div class="controls" id="controls">
   <label>Formato:
     <select id="format">
       <option value="24">24h</option>
@@ -52,6 +61,7 @@
 
 <script>
 const clock = document.getElementById('clock');
+const controls = document.getElementById('controls');
 const formatSel = document.getElementById('format');
 const fontSel = document.getElementById('font');
 const colorSel = document.getElementById('color');
@@ -61,6 +71,7 @@ const alarmSound = document.getElementById('alarmSound');
 
 let alarmTime = null;
 let alarmActive = false;
+let hideTimeout = null;
 
 // Cargar preferencias
 if(localStorage.getItem('prefs')){
@@ -115,11 +126,30 @@ function updateClock(){
 setInterval(updateClock, 1000);
 updateClock();
 
+// Mostrar controles
+function showControls(){
+  controls.style.display = 'flex';
+  clearTimeout(hideTimeout);
+  hideTimeout = setTimeout(()=> controls.style.display = 'none', 10000);
+}
+
+// Eventos para mostrar controles
+clock.addEventListener('mouseenter', showControls);
+clock.addEventListener('click', showControls);
+clock.addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ showControls(); }
+});
+
+// Ocultar cuando se deja de editar
+controls.addEventListener('mouseleave', ()=> controls.style.display = 'none');
+
+// Personalización
 formatSel.addEventListener('change', ()=>{ updateClock(); savePrefs(); });
 fontSel.addEventListener('change', ()=>{ document.body.style.fontFamily = fontSel.value; savePrefs(); });
 colorSel.addEventListener('input', ()=>{ document.body.style.color = colorSel.value; savePrefs(); });
 bgSel.addEventListener('input', ()=>{ document.body.style.backgroundColor = bgSel.value; savePrefs(); });
 
+// Alarma
 document.getElementById('setAlarm').addEventListener('click', ()=>{
   if(alarmInput.value){
     alarmTime = alarmInput.value;
@@ -132,14 +162,6 @@ document.getElementById('clearAlarm').addEventListener('click', ()=>{
   alarmActive = false;
   alert('Alarma eliminada');
 });
-</script>
-
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js")
-    .then(() => console.log("SW registrado"))
-    .catch(err => console.error("Error SW:", err));
-}
 </script>
 
 </body>
