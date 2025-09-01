@@ -55,6 +55,7 @@
   </label>
   <button id="setAlarm">Activar</button>
   <button id="clearAlarm">Quitar</button>
+  <button id="fullscreenBtn">⛶ Pantalla completa</button>
 </div>
 
 <audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
@@ -68,6 +69,7 @@ const colorSel = document.getElementById('color');
 const bgSel = document.getElementById('bgcolor');
 const alarmInput = document.getElementById('alarmTime');
 const alarmSound = document.getElementById('alarmSound');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
 
 let alarmTime = null;
 let alarmActive = false;
@@ -133,14 +135,12 @@ function showControls(){
   hideTimeout = setTimeout(()=> controls.style.display = 'none', 10000);
 }
 
-// Eventos para mostrar controles
 clock.addEventListener('mouseenter', showControls);
 clock.addEventListener('click', showControls);
 clock.addEventListener('keydown', e=>{
   if(e.key === 'Enter'){ showControls(); }
 });
 
-// Ocultar cuando se deja de editar
 controls.addEventListener('mouseleave', ()=> controls.style.display = 'none');
 
 // Personalización
@@ -161,6 +161,17 @@ document.getElementById('clearAlarm').addEventListener('click', ()=>{
   alarmTime = null;
   alarmActive = false;
   alert('Alarma eliminada');
+});
+
+// Pantalla completa
+fullscreenBtn.addEventListener('click', ()=>{
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => {
+      console.warn(`No se pudo activar pantalla completa: ${err.message}`);
+    });
+  } else {
+    document.exitFullscreen();
+  }
 });
 </script>
 
