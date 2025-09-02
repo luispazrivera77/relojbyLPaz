@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Reloj Minimalista</title>
@@ -14,7 +12,6 @@
     transition: background 0.3s, color 0.3s;
   }
   #clock {
-    font-size: 7.5rem; /* 1.5 veces más grande */
     font-size: calc(var(--base-rem) * 1rem);
     letter-spacing: 4px;
     cursor: pointer;
@@ -22,13 +19,11 @@
   }
   .controls {
     margin-top: 20px;
-    display: none; /* Ocultos por defecto */
     display: none; /* ocultos por defecto */
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
   }
-  label { font-size: 0.9rem; }
   label { font-size: 0.9rem; color:#ddd; }
   select, input[type="color"], input[type="time"], button {
     padding:.4rem .6rem; border:1px solid #333; border-radius:4px; background:#000; color:#fff;
@@ -41,10 +36,8 @@
 </head>
 <body>
 
-<div id="clock" tabindex="0"></div>
 <div id="clock" tabindex="0" aria-label="Reloj"></div>
 
-<div class="controls" id="controls">
 <div class="controls" id="controls" aria-live="polite">
   <label>Formato:
     <select id="format">
@@ -66,72 +59,28 @@
   <label>Fuente:
     <select id="font">
       <option value="monospace">Monospace</option>
-@@ -45,13 +65,13 @@
+      <option value="sans-serif">Sans Serif</option>
+      <option value="serif">Serif</option>
+      <option value="'Courier New', monospace">Courier</option>
     </select>
   </label>
   <label>Color números:
-    <input type="color" id="color" value="#00ff00">
     <input type="color" id="color" value="#00ff00" />
   </label>
   <label>Color fondo:
-    <input type="color" id="bgcolor" value="#000000">
     <input type="color" id="bgcolor" value="#000000" />
   </label>
   <label>Alarma:
-    <input type="time" id="alarmTime">
     <input type="time" id="alarmTime" />
   </label>
   <button id="setAlarm">Activar</button>
   <button id="clearAlarm">Quitar</button>
-@@ -61,118 +81,147 @@
+  <button id="fullscreenBtn">⛶ Pantalla completa</button>
+</div>
+
 <audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
 
 <script>
-const clock = document.getElementById('clock');
-const controls = document.getElementById('controls');
-const formatSel = document.getElementById('format');
-const fontSel = document.getElementById('font');
-const colorSel = document.getElementById('color');
-const bgSel = document.getElementById('bgcolor');
-const alarmInput = document.getElementById('alarmTime');
-const alarmSound = document.getElementById('alarmSound');
-const fullscreenBtn = document.getElementById('fullscreenBtn');
-
-let alarmTime = null;
-let alarmActive = false;
-let hideTimeout = null;
-
-// Cargar preferencias
-if(localStorage.getItem('prefs')){
-  const prefs = JSON.parse(localStorage.getItem('prefs'));
-  formatSel.value = prefs.format;
-  fontSel.value = prefs.font;
-  colorSel.value = prefs.color;
-  bgSel.value = prefs.bg;
-  document.body.style.fontFamily = prefs.font;
-  document.body.style.color = prefs.color;
-  document.body.style.backgroundColor = prefs.bg;
-}
-
-function savePrefs(){
-  localStorage.setItem('prefs', JSON.stringify({
-    format: formatSel.value,
-    font: fontSel.value,
-    color: colorSel.value,
-    bg: bgSel.value
-  }));
-}
-
-function updateClock(){
-  const now = new Date();
-  let hours = now.getHours();
-  let minutes = now.getMinutes();
-  let seconds = now.getSeconds();
-  let ampm = '';
-
-  if(formatSel.value === '12'){
-    ampm = hours >= 12 ? ' PM' : ' AM';
-    hours = hours % 12 || 12;
   // Elementos
   const clock = document.getElementById('clock');
   const controls = document.getElementById('controls');
@@ -175,13 +124,8 @@ function updateClock(){
     localStorage.setItem('clock_prefs', JSON.stringify(prefs));
   }
 
-  const timeStr = 
-    String(hours).padStart(2,'0') + ':' +
-    String(minutes).padStart(2,'0') + ':' +
-    String(seconds).padStart(2,'0') + ampm;
   function two(n){ return String(n).padStart(2,'0'); }
 
-  clock.textContent = timeStr;
   function updateClock(){
     const now = new Date();
     let h = now.getHours();
@@ -189,12 +133,6 @@ function updateClock(){
     const s = now.getSeconds();
     let suffix = '';
 
-  if(alarmActive && alarmTime){
-    const current = now.toTimeString().slice(0,5);
-    if(current === alarmTime){
-      alarmSound.play();
-      alarmActive = false;
-      alert('⏰ ¡Alarma!');
     if (formatSel.value === '12') {
       suffix = h >= 12 ? ' PM' : ' AM';
       h = h % 12 || 12;
@@ -212,38 +150,6 @@ function updateClock(){
       }
     }
   }
-}
-
-setInterval(updateClock, 1000);
-updateClock();
-
-// Mostrar controles
-function showControls(){
-  controls.style.display = 'flex';
-  clearTimeout(hideTimeout);
-  hideTimeout = setTimeout(()=> controls.style.display = 'none', 10000);
-}
-
-clock.addEventListener('mouseenter', showControls);
-clock.addEventListener('click', showControls);
-clock.addEventListener('keydown', e=>{
-  if(e.key === 'Enter'){ showControls(); }
-});
-
-controls.addEventListener('mouseleave', ()=> controls.style.display = 'none');
-
-// Personalización
-formatSel.addEventListener('change', ()=>{ updateClock(); savePrefs(); });
-fontSel.addEventListener('change', ()=>{ document.body.style.fontFamily = fontSel.value; savePrefs(); });
-colorSel.addEventListener('input', ()=>{ document.body.style.color = colorSel.value; savePrefs(); });
-bgSel.addEventListener('input', ()=>{ document.body.style.backgroundColor = bgSel.value; savePrefs(); });
-
-// Alarma
-document.getElementById('setAlarm').addEventListener('click', ()=>{
-  if(alarmInput.value){
-    alarmTime = alarmInput.value;
-    alarmActive = true;
-    alert('Alarma configurada para ' + alarmTime);
 
   // Tamaño del reloj según selector
   function applySize(){
@@ -257,21 +163,6 @@ document.getElementById('setAlarm').addEventListener('click', ()=>{
     controls.style.display = 'flex';
     resetHideTimer();
   }
-});
-document.getElementById('clearAlarm').addEventListener('click', ()=>{
-  alarmTime = null;
-  alarmActive = false;
-  alert('Alarma eliminada');
-});
-
-// Pantalla completa
-fullscreenBtn.addEventListener('click', ()=>{
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(err => {
-      console.warn(`No se pudo activar pantalla completa: ${err.message}`);
-    });
-  } else {
-    document.exitFullscreen();
   function resetHideTimer(){
     clearTimeout(hideTimeout);
     hideTimeout = setTimeout(()=>{
@@ -284,7 +175,6 @@ fullscreenBtn.addEventListener('click', ()=>{
       }
     }, 10000);
   }
-});
 
   // Eventos para mostrar
   clock.addEventListener('mouseenter', showControls);
@@ -335,3 +225,4 @@ fullscreenBtn.addEventListener('click', ()=>{
 </script>
 
 </body>
+</html>
