@@ -87,6 +87,7 @@
 </div>
 
 <audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
+<audio id="hourChime" src="https://actions.google.com/sounds/v1/alarms/gentle_bell.ogg" preload="auto"></audio>
 
 <script>
   // Elementos
@@ -103,11 +104,13 @@
   const clearAlarmBtn = document.getElementById('clearAlarm');
   const fullscreenBtn = document.getElementById('fullscreenBtn');
   const alarmSound = document.getElementById('alarmSound');
+  const hourChime = document.getElementById('hourChime');
 
   // Estado
   let alarmTime = null;
   let alarmActive = false;
   let hideTimeout = null;
+  let lastHour = new Date().getHours(); // Para detectar cambio de hora
 
   // Cargar preferencias
   (function loadPrefs(){
@@ -141,6 +144,13 @@
     const m = now.getMinutes();
     const s = now.getSeconds();
     let suffix = '';
+
+    // Detectar cambio de hora y reproducir sonido
+    if (h !== lastHour && m === 0 && s <= 1) {
+      hourChime.currentTime = 0;
+      hourChime.play().catch(()=>{});
+      lastHour = h;
+    }
 
     if (formatSel.value === '12') {
       suffix = h >= 12 ? ' PM' : ' AM';
