@@ -17,6 +17,13 @@
     cursor: pointer;
     user-select: none;
   }
+  #date {
+    font-size: calc(var(--base-rem) * 0.5rem);
+    letter-spacing: 2px;
+    margin-top: 10px;
+    opacity: 0.8;
+    user-select: none;
+  }
   .controls {
     margin-top: 20px;
     display: none; /* ocultos por defecto */
@@ -37,6 +44,7 @@
 <body>
 
 <div id="clock" tabindex="0" aria-label="Reloj"></div>
+<div id="date"></div>
 
 <div class="controls" id="controls" aria-live="polite">
   <label>Formato:
@@ -83,6 +91,7 @@
 <script>
   // Elementos
   const clock = document.getElementById('clock');
+  const date = document.getElementById('date');
   const controls = document.getElementById('controls');
   const formatSel = document.getElementById('format');
   const sizeSel = document.getElementById('size');
@@ -139,6 +148,15 @@
     }
     clock.textContent = `${two(h)}:${two(m)}:${two(s)}${suffix}`;
 
+    // Actualizar fecha
+    const options = { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    };
+    date.textContent = now.toLocaleDateString('es-ES', options);
+
     // Alarma (compara HH:MM en 24h)
     if (alarmActive && alarmTime) {
       const currentHM = `${two(now.getHours())}:${two(now.getMinutes())}`;
@@ -156,6 +174,7 @@
     const pct = parseInt(sizeSel.value, 10) || 100;
     const baseRem = 7.5; // base 100%
     clock.style.fontSize = (baseRem * (pct/100)) + 'rem';
+    date.style.fontSize = (baseRem * 0.5 * (pct/100)) + 'rem';
   }
 
   // Mostrar/ocultar controles
