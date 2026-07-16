@@ -3,48 +3,107 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Reloj Minimalista</title>
+<title>Reloj Minimalista Pro</title>
 <style>
-  :root { --base-rem: 7.5; }
+  :root { 
+    --base-rem: 7.5; 
+    --accent-color: #0f0;
+    --bg-color: #000;
+  }
   body {
     margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    height:100vh; font-family: monospace; background:#000; color:#0f0;
+    height:100vh; font-family: monospace; background: var(--bg-color); color: var(--accent-color);
     transition: background 0.3s, color 0.3s;
+    overflow: hidden;
   }
   #clock {
     font-size: calc(var(--base-rem) * 1rem);
     letter-spacing: 4px;
     cursor: pointer;
     user-select: none;
+    text-align: center;
   }
   #date {
-    font-size: calc(var(--base-rem) * 0.5rem);
+    font-size: calc(var(--base-rem) * 0.35rem);
     letter-spacing: 2px;
     margin-top: 10px;
     opacity: 0.8;
     user-select: none;
+    text-align: center;
   }
+  
+  /* Botón de ajustes flotante */
+  #settingsToggle {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: inherit;
+    font-size: 1.5rem;
+    padding: 8px 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    transition: transform 0.2s;
+  }
+  #settingsToggle:hover {
+    transform: scale(1.1);
+  }
+
   .controls {
-    margin-top: 20px;
-    display: none; /* ocultos por defecto */
+    position: absolute;
+    bottom: 80px;
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid #333;
+    padding: 15px;
+    border-radius: 8px;
+    display: none; /* Se maneja por JS */
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
+    max-width: 90%;
+    z-index: 9;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.8);
   }
-  label { font-size: 0.9rem; color:#ddd; }
+  label { font-size: 0.85rem; color:#ddd; display: flex; flex-direction: column; gap: 4px; }
   select, input[type="color"], input[type="time"], button {
-    padding:.4rem .6rem; border:1px solid #333; border-radius:4px; background:#000; color:#fff;
+    padding:.4rem .6rem; border:1px solid #444; border-radius:4px; background:#111; color:#fff;
+    font-family: inherit;
   }
   button {
-    cursor:pointer; font-weight:600; border-color:#444;
+    cursor:pointer; font-weight:600; border-color:#555;
+    transition: background 0.2s;
   }
-  button:hover { background:#111; }
+  button:hover { background:#333; }
+  
+  /* Botón de detener alarma */
+  #stopAlarmBtn {
+    background: #ff3333;
+    color: white;
+    border: none;
+    display: none;
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-size: 1.1rem;
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
 </style>
 </head>
 <body>
 
 <div id="clock" tabindex="0" aria-label="Reloj"></div>
 <div id="date"></div>
+
+<button id="stopAlarmBtn">🔕 Detener Alarma</button>
+
+<button id="settingsToggle" title="Ajustes">⚙️</button>
 
 <div class="controls" id="controls" aria-live="polite">
   <label>Formato:
@@ -61,7 +120,6 @@
       <option value="100" selected>100%</option>
       <option value="150">150%</option>
       <option value="200">200%</option>
-      <option value="300">300%</option>
     </select>
   </label>
   <label>Fuente:
@@ -86,7 +144,8 @@
   <button id="fullscreenBtn">⛶ Pantalla completa</button>
 </div>
 
-<audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
+<!-- Audios con fallback de respaldo integrado -->
+<audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto" loop></audio>
 <audio id="hourChime" src="https://actions.google.com/sounds/v1/alarms/gentle_bell.ogg" preload="auto"></audio>
 
 <script>
@@ -94,6 +153,7 @@
   const clock = document.getElementById('clock');
   const date = document.getElementById('date');
   const controls = document.getElementById('controls');
+  const settingsToggle = document.getElementById('settingsToggle');
   const formatSel = document.getElementById('format');
   const sizeSel = document.getElementById('size');
   const fontSel = document.getElementById('font');
@@ -102,6 +162,7 @@
   const alarmInput = document.getElementById('alarmTime');
   const setAlarmBtn = document.getElementById('setAlarm');
   const clearAlarmBtn = document.getElementById('clearAlarm');
+  const stopAlarmBtn = document.getElementById('stopAlarmBtn');
   const fullscreenBtn = document.getElementById('fullscreenBtn');
   const alarmSound = document.getElementById('alarmSound');
   const hourChime = document.getElementById('hourChime');
@@ -109,8 +170,33 @@
   // Estado
   let alarmTime = null;
   let alarmActive = false;
+  let isRinging = false;
   let hideTimeout = null;
-  let lastHour = new Date().getHours(); // Para detectar cambio de hora
+  let lastHour = new Date().getHours();
+  let wakeLock = null;
+
+  // 1. Prevención de Apagado de Pantalla (Wake Lock)
+  async function requestWakeLock() {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLock = await navigator.wakeLock.request('screen');
+      }
+    } catch (err) {
+      console.warn(`No se pudo activar el bloqueo de suspensión: ${err.message}`);
+    }
+  }
+
+  // Volver a activar Wake Lock si la app vuelve de estar en segundo plano
+  document.addEventListener('visibilitychange', async () => {
+    if (wakeLock !== null && document.visibilityState === 'visible') {
+      await requestWakeLock();
+    }
+  });
+
+  // Inicializar Wake Lock al hacer clic en cualquier lado (requisito del navegador)
+  document.addEventListener('click', () => {
+    if (!wakeLock) requestWakeLock();
+  }, { once: true });
 
   // Cargar preferencias
   (function loadPrefs(){
@@ -145,7 +231,7 @@
     const s = now.getSeconds();
     let suffix = '';
 
-    // Detectar cambio de hora y reproducir sonido
+    // Sonido cada hora en punto
     if (h !== lastHour && m === 0 && s <= 1) {
       hourChime.currentTime = 0;
       hourChime.play().catch(()=>{});
@@ -167,48 +253,85 @@
     };
     date.textContent = now.toLocaleDateString('es-ES', options);
 
-    // Alarma (compara HH:MM en 24h)
-    if (alarmActive && alarmTime) {
+    // Activación de Alarma (Evita molestos alerts y añade vibración)
+    if (alarmActive && alarmTime && !isRinging) {
       const currentHM = `${two(now.getHours())}:${two(now.getMinutes())}`;
       if (currentHM === alarmTime) {
-        alarmSound.currentTime = 0;
-        alarmSound.play().catch(()=>{});
-        alarmActive = false;
-        alert('⏰ ¡Alarma!');
+        triggerAlarm();
       }
     }
   }
 
+  // Activa sonido, vibración y muestra botón de apagado
+  function triggerAlarm() {
+    isRinging = true;
+    alarmSound.currentTime = 0;
+    alarmSound.play().catch(()=>{});
+    
+    // Vibración en dispositivos móviles (patrón intermitente)
+    if ('vibrate' in navigator) {
+      navigator.vibrate([500, 250, 500, 250, 500]);
+    }
+
+    stopAlarmBtn.style.display = 'block';
+  }
+
+  // Detener Alarma activa
+  stopAlarmBtn.addEventListener('click', () => {
+    alarmSound.pause();
+    alarmSound.currentTime = 0;
+    if ('vibrate' in navigator) {
+      navigator.vibrate(0); // Detiene la vibración
+    }
+    stopAlarmBtn.style.display = 'none';
+    isRinging = false;
+    alarmActive = false; // Desactiva para que no se repita indefinidamente en el mismo minuto
+  });
+
   // Tamaño del reloj según selector
   function applySize(){
     const pct = parseInt(sizeSel.value, 10) || 100;
-    const baseRem = 7.5; // base 100%
+    const baseRem = 7.5;
     clock.style.fontSize = (baseRem * (pct/100)) + 'rem';
-    date.style.fontSize = (baseRem * 0.5 * (pct/100)) + 'rem';
+    date.style.fontSize = (baseRem * 0.35 * (pct/100)) + 'rem';
   }
 
-  // Mostrar/ocultar controles
+  // Mostrar/ocultar controles de manera inteligente
+  function toggleControls() {
+    if (controls.style.display === 'flex') {
+      hideControls();
+    } else {
+      showControls();
+    }
+  }
+
   function showControls(){
     controls.style.display = 'flex';
     resetHideTimer();
   }
+
+  function hideControls() {
+    controls.style.display = 'none';
+    clearTimeout(hideTimeout);
+  }
+
   function resetHideTimer(){
     clearTimeout(hideTimeout);
     hideTimeout = setTimeout(()=>{
-      // Solo ocultar si no se está editando ni está el mouse encima
       if (!controls.matches(':hover') && !controls.contains(document.activeElement)) {
-        controls.style.display = 'none';
+        hideControls();
       } else {
-        // si aún hay interacción, reintentar
         resetHideTimer();
       }
-    }, 10000);
+    }, 8000);
   }
 
-  // Eventos para mostrar
-  clock.addEventListener('mouseenter', showControls);
+  // Eventos de interacción con el botón y el reloj
+  settingsToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleControls();
+  });
   clock.addEventListener('click', showControls);
-  clock.addEventListener('keydown', e => { if(e.key === 'Enter') showControls(); });
 
   // Mantener visibles mientras se edita o hay interacción
   controls.addEventListener('mouseenter', resetHideTimer);
@@ -216,7 +339,13 @@
   controls.addEventListener('change', resetHideTimer);
   controls.addEventListener('focusin', () => clearTimeout(hideTimeout));
   controls.addEventListener('focusout', resetHideTimer);
-  controls.addEventListener('mouseleave', () => { controls.style.display = 'none'; });
+  
+  // Ocultar al hacer clic fuera del panel de control
+  document.addEventListener('click', (e) => {
+    if (!controls.contains(e.target) && e.target !== settingsToggle && e.target !== clock) {
+      hideControls();
+    }
+  });
 
   // Personalización
   formatSel.addEventListener('change', ()=>{ updateClock(); savePrefs(); });
@@ -228,7 +357,7 @@
   // Alarma
   setAlarmBtn.addEventListener('click', ()=>{
     if (alarmInput.value) {
-      alarmTime = alarmInput.value; // "HH:MM" 24h
+      alarmTime = alarmInput.value;
       alarmActive = true;
       alert('Alarma configurada para ' + alarmTime);
     }
@@ -236,6 +365,9 @@
   clearAlarmBtn.addEventListener('click', ()=>{
     alarmTime = null;
     alarmActive = false;
+    isRinging = false;
+    alarmSound.pause();
+    stopAlarmBtn.style.display = 'none';
     alert('Alarma eliminada');
   });
 
