@@ -7,8 +7,8 @@
 <style>
   :root { 
     --base-rem: 7.5; 
-    --accent-color: #0f0;
-    --bg-color: #000;
+    --accent-color: #00ff00;
+    --bg-color: #000000;
   }
   body {
     margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -54,7 +54,7 @@
   .controls {
     position: absolute;
     bottom: 80px;
-    background: rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.95);
     border: 1px solid #333;
     padding: 15px;
     border-radius: 8px;
@@ -86,6 +86,7 @@
     margin-top: 15px;
     padding: 10px 20px;
     font-size: 1.1rem;
+    border-radius: 4px;
     animation: pulse 1s infinite;
   }
 
@@ -93,6 +94,29 @@
     0% { transform: scale(1); }
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
+  }
+
+  /* Notificaciones elegantes de UI */
+  .toast {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(30, 30, 30, 0.9);
+    color: #fff;
+    border: 1px solid var(--accent-color);
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    z-index: 100;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
   }
 </style>
 </head>
@@ -144,6 +168,9 @@
   <button id="fullscreenBtn">⛶ Pantalla completa</button>
 </div>
 
+<!-- Elemento contenedor para notificaciones tipo Toast -->
+<div id="toast" class="toast" role="alert"></div>
+
 <!-- Audios con fallback de respaldo integrado -->
 <audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto" loop></audio>
 <audio id="hourChime" src="https://actions.google.com/sounds/v1/alarms/gentle_bell.ogg" preload="auto"></audio>
@@ -166,6 +193,7 @@
   const fullscreenBtn = document.getElementById('fullscreenBtn');
   const alarmSound = document.getElementById('alarmSound');
   const hourChime = document.getElementById('hourChime');
+  const toast = document.getElementById('toast');
 
   // Estado
   let alarmTime = null;
@@ -174,6 +202,16 @@
   let hideTimeout = null;
   let lastHour = new Date().getHours();
   let wakeLock = null;
+  let vibrationInterval = null;
+
+  // Sistema de notificación discreto para evitar alerts intrusivos
+  function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => {
+      toast.classList.remove('show');
+    }, 3000);
+  }
 
   // 1. Prevención de Apagado de Pantalla (Wake Lock)
   async function requestWakeLock() {
@@ -186,14 +224,14 @@
     }
   }
 
-  // Volver a activar Wake Lock si la app vuelve de estar en segundo plano
+  // Volver a activar Wake Lock si la app vuelve a estar visible
   document.addEventListener('visibilitychange', async () => {
     if (wakeLock !== null && document.visibilityState === 'visible') {
       await requestWakeLock();
     }
   });
 
-  // Inicializar Wake Lock al hacer clic en cualquier lado (requisito del navegador)
+  // Inicializar Wake Lock al hacer clic en cualquier lado
   document.addEventListener('click', () => {
     if (!wakeLock) requestWakeLock();
   }, { once: true });
@@ -206,8 +244,13 @@
     if(prefs.format) formatSel.value = prefs.format;
     if(prefs.size)   sizeSel.value = prefs.size;
     if(prefs.font)   { fontSel.value = prefs.font; document.body.style.fontFamily = prefs.font; }
-    if(prefs.color)  { colorSel.value = prefs.color; document.body.style.color = prefs.color; }
-    if(prefs.bg)     { bgSel.value = prefs.bg; document.body.style.backgroundColor = prefs.bg; }
+    if(prefs.color)  { colorSel.value = prefs.color; document.body.style.color = prefs.color; document.documentElement.style.setProperty('--accent-color', prefs.color); }
+    if(prefs.bg)     { bgSel.value = prefs.bg; document.body.style.backgroundColor = prefs.bg; document.documentElement.style.setProperty('--bg-color', prefs.bg); }
+    if(prefs.alarmTime) {
+      alarmInput.value = prefs.alarmTime;
+      alarmTime = prefs.alarmTime;
+      alarmActive = true;
+    }
     applySize();
   })();
 
@@ -217,7 +260,8 @@
       size: sizeSel.value,
       font: fontSel.value,
       color: colorSel.value,
-      bg: bgSel.value
+      bg: bgSel.value,
+      alarmTime: alarmActive ? alarmTime : null
     };
     localStorage.setItem('clock_prefs', JSON.stringify(prefs));
   }
@@ -244,7 +288,7 @@
     }
     clock.textContent = `${two(h)}:${two(m)}:${two(s)}${suffix}`;
 
-    // Actualizar fecha
+    // Actualizar fecha en español
     const options = { 
       weekday: 'long', 
       year: 'numeric', 
@@ -253,7 +297,7 @@
     };
     date.textContent = now.toLocaleDateString('es-ES', options);
 
-    // Activación de Alarma (Evita molestos alerts y añade vibración)
+    // Activación de Alarma
     if (alarmActive && alarmTime && !isRinging) {
       const currentHM = `${two(now.getHours())}:${two(now.getMinutes())}`;
       if (currentHM === alarmTime) {
@@ -262,15 +306,18 @@
     }
   }
 
-  // Activa sonido, vibración y muestra botón de apagado
+  // Activa sonido, vibración intermitente continua y muestra botón de apagado
   function triggerAlarm() {
     isRinging = true;
     alarmSound.currentTime = 0;
     alarmSound.play().catch(()=>{});
     
-    // Vibración en dispositivos móviles (patrón intermitente)
+    // Vibración recurrente en dispositivos móviles (cada 2.5 segundos)
     if ('vibrate' in navigator) {
-      navigator.vibrate([500, 250, 500, 250, 500]);
+      navigator.vibrate([500, 250, 500]);
+      vibrationInterval = setInterval(() => {
+        navigator.vibrate([500, 250, 500]);
+      }, 2500);
     }
 
     stopAlarmBtn.style.display = 'block';
@@ -280,12 +327,18 @@
   stopAlarmBtn.addEventListener('click', () => {
     alarmSound.pause();
     alarmSound.currentTime = 0;
+    if (vibrationInterval) {
+      clearInterval(vibrationInterval);
+      vibrationInterval = null;
+    }
     if ('vibrate' in navigator) {
-      navigator.vibrate(0); // Detiene la vibración
+      navigator.vibrate(0); // Forzar detención final
     }
     stopAlarmBtn.style.display = 'none';
     isRinging = false;
-    alarmActive = false; // Desactiva para que no se repita indefinidamente en el mismo minuto
+    alarmActive = false; // Desactivar para evitar repeticiones del mismo minuto
+    savePrefs();
+    showToast('Alarma desactivada');
   });
 
   // Tamaño del reloj según selector
@@ -347,31 +400,50 @@
     }
   });
 
-  // Personalización
+  // Personalización interactiva de colores y estilos
   formatSel.addEventListener('change', ()=>{ updateClock(); savePrefs(); });
   sizeSel.addEventListener('change', ()=>{ applySize(); savePrefs(); });
   fontSel.addEventListener('change', ()=>{ document.body.style.fontFamily = fontSel.value; savePrefs(); });
-  colorSel.addEventListener('input', ()=>{ document.body.style.color = colorSel.value; savePrefs(); });
-  bgSel.addEventListener('input', ()=>{ document.body.style.backgroundColor = bgSel.value; savePrefs(); });
+  
+  colorSel.addEventListener('input', ()=>{ 
+    document.body.style.color = colorSel.value; 
+    document.documentElement.style.setProperty('--accent-color', colorSel.value);
+    savePrefs(); 
+  });
+  
+  bgSel.addEventListener('input', ()=>{ 
+    document.body.style.backgroundColor = bgSel.value; 
+    document.documentElement.style.setProperty('--bg-color', bgSel.value);
+    savePrefs(); 
+  });
 
-  // Alarma
+  // Eventos de la Alarma
   setAlarmBtn.addEventListener('click', ()=>{
     if (alarmInput.value) {
       alarmTime = alarmInput.value;
       alarmActive = true;
-      alert('Alarma configurada para ' + alarmTime);
+      savePrefs();
+      showToast('Alarma establecida para las ' + alarmTime);
+    } else {
+      showToast('Por favor, selecciona una hora válida');
     }
   });
+  
   clearAlarmBtn.addEventListener('click', ()=>{
     alarmTime = null;
     alarmActive = false;
     isRinging = false;
     alarmSound.pause();
+    if (vibrationInterval) {
+      clearInterval(vibrationInterval);
+      vibrationInterval = null;
+    }
     stopAlarmBtn.style.display = 'none';
-    alert('Alarma eliminada');
+    savePrefs();
+    showToast('Alarma eliminada');
   });
 
-  // Pantalla completa
+  // Gestión de pantalla completa nativa
   fullscreenBtn.addEventListener('click', ()=>{
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(()=>{});
@@ -380,7 +452,7 @@
     }
   });
 
-  // Ciclo del reloj
+  // Inicialización y arranque del ciclo
   updateClock();
   setInterval(updateClock, 1000);
 </script>
