@@ -109,6 +109,7 @@
   #settingsToggle { bottom: 20px; right: 20px; }
   #infoToggle { bottom: 20px; left: 20px; }
   #shareToggle { top: 20px; right: 20px; }
+  #castToggle { top: 20px; right: 70px; } /* Botón Transmitir a TV */
 
   /* Panel de Controles */
   .controls {
@@ -261,6 +262,7 @@
 <button id="stopAlarmBtn">🔕 Detener Alarma</button>
 
 <!-- Botones Flotantes -->
+<button id="castToggle" class="icon-btn" title="Transmitir a Smart TV">📺</button>
 <button id="shareToggle" class="icon-btn" title="Compartir Reloj">🔗</button>
 <button id="infoToggle" class="icon-btn" title="Información e Instrucciones">ℹ️</button>
 <button id="settingsToggle" class="icon-btn" title="Ajustes">⚙️</button>
@@ -327,16 +329,15 @@
   <div class="modal-content">
     <h2>Reloj Minimalista por LPaz</h2>
     <ul>
-      <li><strong>Cambio de Color Automático:</strong> Puedes elegir entre un color fijo o que cambie automáticamente cada hora entre tonos dinámicos.</li>
-      <li><strong>Fácil de Compartir:</strong> Usa el ícono 🔗 superior para enviar o copiar el enlace directo desde PC o móvil.</li>
-      <li><strong>Clima Día/Noche:</strong> Temperatura en tiempo real e íconos dinámicos (Sol de día, Luna de noche).</li>
-      <li><strong>Sin Instalación:</strong> Funciona directamente en cualquier navegador web.</li>
-      <li><strong>Multiplataforma:</strong> Compatible con PC, Android e iPhone (vertical u horizontal).</li>
-      <li><strong>Ajustes Rápidos:</strong> Haz clic en ⚙️ o toca la pantalla para abrir la configuración.</li>
-      <li><strong>Ajuste de Brillo:</strong> 3 niveles de luminosidad.</li>
-      <li><strong>Sonido Estilo Casio:</strong> Alarma digital sintetizada.</li>
-      <li><strong>Modo Pantalla Encendida:</strong> Mantiene la pantalla encendida (<em>Wake Lock</em>).</li>
-      <li><strong>Guardado Automático:</strong> Conserva tus opciones personalizadas.</li>
+      <li><strong>Transmisión a Smart TV (📺):</strong> Permite enviar la vista del reloj directamente a televisores inteligentes y Chromecasts en tu red Wi-Fi.</li>
+      <li><strong>Cambio de Color Automático:</strong> Opción para cambiar el color del reloj automáticamente cada hora.</li>
+      <li><strong>Fácil de Compartir (🔗):</strong> Permite enviar o copiar el enlace directo desde PC o móvil.</li>
+      <li><strong>Clima Día/Noche:</strong> Temperatura e íconos en tiempo real (Sol/Luna).</li>
+      <li><strong>Sin Instalación:</strong> Funciona directamente en tu navegador.</li>
+      <li><strong>Multiplataforma:</strong> Compatible con PC, Android e iPhone.</li>
+      <li><strong>Ajustes Rápidos:</strong> Presiona ⚙️ o toca la pantalla.</li>
+      <li><strong>Modo Pantalla Encendida:</strong> Mantiene la pantalla activa (<em>Wake Lock</em>).</li>
+      <li><strong>Guardado Automático:</strong> Conserva todas tus configuraciones.</li>
     </ul>
 
     <div class="contact-section">
@@ -364,6 +365,7 @@
   const settingsToggle = document.getElementById('settingsToggle');
   const infoToggle = document.getElementById('infoToggle');
   const shareToggle = document.getElementById('shareToggle');
+  const castToggle = document.getElementById('castToggle');
   const infoModal = document.getElementById('infoModal');
   const closeInfoBtn = document.getElementById('closeInfoBtn');
   
@@ -395,33 +397,30 @@
   let audioCtx = null;
   let currentCityData = null;
 
-  // Paleta de colores vibrantes para el cambio automático cada hora
+  // Paleta de colores para cambio automático
   const hourlyColors = [
-    "#00ff00", // Verde Neón (00:00)
-    "#00ffff", // Cyan (01:00)
-    "#ff00ff", // Magenta (02:00)
-    "#ffff00", // Amarillo (03:00)
-    "#ff8800", // Naranja (04:00)
-    "#0088ff", // Azul Neón (05:00)
-    "#ff3366", // Rosa / Rojo Neón (06:00)
-    "#ffffff", // Blanco Puro (07:00)
-    "#a6ff00", // Lima (08:00)
-    "#00ffaa", // Menta (09:00)
-    "#ff99cc", // Rosa Claro (10:00)
-    "#ffcc00", // Oro (11:00)
-    "#00e5ff", // Turquoise (12:00)
-    "#ff0055", // Carmesí (13:00)
-    "#76ff03", // Verde Eléctrico (14:00)
-    "#d500f9", // Púrpura (15:00)
-    "#ffab00", // Ámbar (16:00)
-    "#1de9b6", // Verde Agua (17:00)
-    "#ff3d00", // Coral (18:00)
-    "#00b0ff", // Azul Cielo (19:00)
-    "#f4ff81", // Amarillo Neón (20:00)
-    "#e040fb", // Violeta (21:00)
-    "#64ffda", // Aquamarina (22:00)
-    "#ff6e40"  // Salmón (23:00)
+    "#00ff00", "#00ffff", "#ff00ff", "#ffff00", "#ff8800", "#0088ff",
+    "#ff3366", "#ffffff", "#a6ff00", "#00ffaa", "#ff99cc", "#ffcc00",
+    "#00e5ff", "#ff0055", "#76ff03", "#d500f9", "#ffab00", "#1de9b6",
+    "#ff3d00", "#00b0ff", "#f4ff81", "#e040fb", "#64ffda", "#ff6e40"
   ];
+
+  // Transmisión a Smart TV usando Presentation API / Remote Playback
+  async function castToSmartTV() {
+    if ('PresentationRequest' in window) {
+      try {
+        const presentationRequest = new PresentationRequest([window.location.href]);
+        await presentationRequest.start();
+        showToast('📺 Conectando con Smart TV...');
+      } catch (err) {
+        if (err.name !== 'NotFoundError' && err.name !== 'NotAllowedError') {
+          showToast('No se encontraron Smart TVs cercanas');
+        }
+      }
+    } else {
+      showToast('Usa la opción "Enviar/Cast" de tu navegador');
+    }
+  }
 
   function applyColorForHour(hour) {
     if (colorModeSel.value === 'auto') {
@@ -644,10 +643,9 @@
     const s = now.getSeconds();
     let suffix = '';
 
-    // Cambio de hora en punto
     if (h !== lastHour && m === 0 && s <= 1) {
       playCasioBeep(2048, 0.15);
-      applyColorForHour(h); // Cambia el color automáticamente si la opción está activa
+      applyColorForHour(h);
       updateWeatherData();
       lastHour = h;
     }
@@ -747,6 +745,7 @@
     }, 8000);
   }
 
+  castToggle.addEventListener('click', castToSmartTV);
   shareToggle.addEventListener('click', shareClock);
 
   settingsToggle.addEventListener('click', (e) => {
@@ -814,7 +813,7 @@
   });
 
   colorSel.addEventListener('input', ()=>{ 
-    colorModeSel.value = 'manual'; // Al tocar el selector de color vuelve a manual
+    colorModeSel.value = 'manual';
     document.body.style.color = colorSel.value; 
     document.documentElement.style.setProperty('--accent-color', colorSel.value);
     savePrefs(); 
