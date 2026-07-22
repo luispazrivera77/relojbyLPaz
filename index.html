@@ -2,18 +2,32 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Reloj Minimalista Pro</title>
 <style>
   :root { 
-    --base-rem: 7.5; 
     --accent-color: #00ff00;
     --bg-color: #000000;
     --clock-brightness: 1;
+    --size-factor: 1; /* Factor multiplicador para el tamaño */
   }
+
+  * {
+    box-sizing: border-box;
+  }
+
   body {
-    margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    height:100vh; font-family: monospace; background: var(--bg-color); color: var(--accent-color);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    height: 100dvh; /* Altura dinámica para navegadores móviles */
+    font-family: monospace;
+    background: var(--bg-color);
+    color: var(--accent-color);
     transition: background 0.3s, color 0.3s;
     overflow: hidden;
   }
@@ -29,26 +43,32 @@
     cursor: pointer;
     user-select: none;
     position: relative;
+    width: 100%;
+    padding: 0 10px;
   }
 
+  /* Cálculo automático con clamp(mínimo, valor_dinámico, máximo) */
   #clock {
-    font-size: calc(var(--base-rem) * 1rem);
-    letter-spacing: 4px;
+    font-size: calc(clamp(3.2rem, 14vw, 12rem) * var(--size-factor));
+    letter-spacing: 2px;
     text-align: center;
+    line-height: 1;
+    white-space: nowrap;
   }
 
   #date {
-    font-size: calc(var(--base-rem) * 0.35rem);
-    letter-spacing: 2px;
-    margin-top: 10px;
-    opacity: 0.8;
+    font-size: calc(clamp(0.9rem, 3.5vw, 2.5rem) * var(--size-factor));
+    letter-spacing: 1px;
+    margin-top: 1rem;
+    opacity: 0.85;
     text-align: center;
+    text-transform: capitalize;
   }
 
   /* Indicador visual de Alarma Activa */
   #alarmIndicator {
     display: none;
-    font-size: calc(var(--base-rem) * 0.25rem);
+    font-size: calc(clamp(0.8rem, 2vw, 1.2rem) * var(--size-factor));
     margin-top: 15px;
     align-items: center;
     gap: 8px;
@@ -58,7 +78,7 @@
     border: 1px solid rgba(255, 255, 255, 0.15);
   }
 
-  /* Botones flotantes (Ajustes e Info) */
+  /* Botones flotantes */
   .icon-btn {
     position: absolute;
     bottom: 20px;
@@ -79,7 +99,7 @@
   #settingsToggle { right: 20px; }
   #infoToggle { left: 20px; }
 
-  /* Panel de Controles/Ajustes */
+  /* Panel de Controles */
   .controls {
     position: absolute;
     bottom: 80px;
@@ -194,11 +214,9 @@
 
 <button id="stopAlarmBtn">🔕 Detener Alarma</button>
 
-<!-- Botones de Interfaz Flotantes -->
 <button id="infoToggle" class="icon-btn" title="Información e Instrucciones">ℹ️</button>
 <button id="settingsToggle" class="icon-btn" title="Ajustes">⚙️</button>
 
-<!-- Panel de Configuración -->
 <div class="controls" id="controls" aria-live="polite">
   <label>Formato:
     <select id="format">
@@ -213,14 +231,13 @@
       <option value="0.3">Bajo (30%)</option>
     </select>
   </label>
-  <label>Tamaño:
+  <label>Escala:
     <select id="size">
-      <option value="25">25%</option>
-      <option value="50">50%</option>
-      <option value="75">75%</option>
-      <option value="100" selected>100%</option>
-      <option value="150">150%</option>
-      <option value="200">200%</option>
+      <option value="50">Pequeño (50%)</option>
+      <option value="75">Mediano (75%)</option>
+      <option value="100" selected>Auto / Normal (100%)</option>
+      <option value="125">Grande (125%)</option>
+      <option value="150">Extra Grande (150%)</option>
     </select>
   </label>
   <label>Fuente:
@@ -245,31 +262,25 @@
   <button id="fullscreenBtn">⛶ Pantalla completa</button>
 </div>
 
-<!-- Modal de Información e Instrucciones -->
 <div id="infoModal" class="modal-overlay">
   <div class="modal-content">
     <h2>Guía e Información</h2>
     <ul>
-      <li><strong>Ajustes Rápidos:</strong> Haz clic en el ícono del engranaje (⚙️) o toca la pantalla en cualquier lugar para mostrar/ocultar el menú. Se ocultará automáticamente tras 8 segundos de inactividad.</li>
-      <li><strong>Ajuste de Brillo:</strong> Elige entre 3 niveles de intensidad (Alto, Medio, Bajo), ideal para usar de noche sin molestar la vista.</li>
-      <li><strong>Alarma & Vibración:</strong> Cuando configures la alarma, aparecerá un ícono ⏰ en pantalla. Al sonar la alarma se activará el audio y la vibración (en móviles). Presiona el botón rojo para detenerla.</li>
-      <li><strong>Mantener Pantalla Encendida:</strong> La aplicación activa automáticamente la función <em>Wake Lock</em> para prevenir que la pantalla del dispositivo se suspenda.</li>
-      <li><strong>Aviso de Hora:</strong> Sonará una suave campanada al inicio de cada hora.</li>
-      <li><strong>Guardado Automático:</strong> Tus preferencias de formato, color, tamaño, brillo y alarma activa se guardan en el navegador.</li>
+      <li><strong>Ajuste Automático de Pantalla:</strong> El tamaño del reloj se adapta dinámicamente al girar tu móvil (vertical u horizontal) o al cambiar de pantalla en PC.</li>
+      <li><strong>Ajustes Rápidos:</strong> Haz clic en ⚙️ o toca la pantalla en cualquier lugar para abrir el menú.</li>
+      <li><strong>Ajuste de Brillo:</strong> Selecciona entre 3 niveles para la noche o día.</li>
+      <li><strong>Sonido Estilo Casio:</strong> Utiliza el característico pitido "bip-bip" retro generado digitalmente sin necesidad de internet.</li>
+      <li><strong>Mantener Pantalla Encendida:</strong> Activa automáticamente <em>Wake Lock</em>.</li>
+      <li><strong>Guardado Automático:</strong> Tus preferencias se quedan guardadas en tu navegador.</li>
     </ul>
     <button id="closeInfoBtn" class="close-modal-btn">Entendido</button>
   </div>
 </div>
 
-<!-- Notificación Toast -->
 <div id="toast" class="toast" role="alert"></div>
 
-<!-- Audios -->
-<audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto" loop></audio>
-<audio id="hourChime" src="https://actions.google.com/sounds/v1/alarms/gentle_bell.ogg" preload="auto"></audio>
-
 <script>
-  // Elementos
+  // Elementos UI
   const clockContainer = document.getElementById('clockContainer');
   const clock = document.getElementById('clock');
   const date = document.getElementById('date');
@@ -292,9 +303,6 @@
   const clearAlarmBtn = document.getElementById('clearAlarm');
   const stopAlarmBtn = document.getElementById('stopAlarmBtn');
   const fullscreenBtn = document.getElementById('fullscreenBtn');
-  
-  const alarmSound = document.getElementById('alarmSound');
-  const hourChime = document.getElementById('hourChime');
   const toast = document.getElementById('toast');
 
   // Estado
@@ -305,23 +313,58 @@
   let lastHour = new Date().getHours();
   let wakeLock = null;
   let vibrationInterval = null;
+  let alarmInterval = null;
+  let audioCtx = null;
 
-  // Sistema de notificación discreto
+  function getAudioContext() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    return audioCtx;
+  }
+
+  function playCasioBeep(freq = 2048, duration = 0.08) {
+    try {
+      const ctx = getAudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch(e) {
+      console.warn('Audio Context no listo');
+    }
+  }
+
+  function playCasioDoubleBeep() {
+    playCasioBeep(2048, 0.06);
+    setTimeout(() => playCasioBeep(2048, 0.06), 100);
+  }
+
   function showToast(message) {
     toast.textContent = message;
     toast.classList.add('show');
     setTimeout(() => { toast.classList.remove('show'); }, 3000);
   }
 
-  // Prevención de Apagado de Pantalla (Wake Lock)
   async function requestWakeLock() {
     try {
       if ('wakeLock' in navigator) {
         wakeLock = await navigator.wakeLock.request('screen');
       }
-    } catch (err) {
-      console.warn(`Wake Lock no soportado: ${err.message}`);
-    }
+    } catch (err) {}
   }
 
   document.addEventListener('visibilitychange', async () => {
@@ -331,10 +374,10 @@
   });
 
   document.addEventListener('click', () => {
+    getAudioContext();
     if (!wakeLock) requestWakeLock();
   }, { once: true });
 
-  // Cargar preferencias guardadas
   (function loadPrefs(){
     const saved = localStorage.getItem('clock_prefs');
     if(!saved) return;
@@ -344,7 +387,10 @@
       brightnessSel.value = prefs.brightness;
       document.documentElement.style.setProperty('--clock-brightness', prefs.brightness);
     }
-    if(prefs.size) sizeSel.value = prefs.size;
+    if(prefs.size) {
+      sizeSel.value = prefs.size;
+      applySize();
+    }
     if(prefs.font) { fontSel.value = prefs.font; document.body.style.fontFamily = prefs.font; }
     if(prefs.color) { 
       colorSel.value = prefs.color; 
@@ -362,7 +408,6 @@
       alarmActive = true;
       updateAlarmUI();
     }
-    applySize();
   })();
 
   function savePrefs(){
@@ -387,10 +432,8 @@
     const s = now.getSeconds();
     let suffix = '';
 
-    // Sonido hora en punto
     if (h !== lastHour && m === 0 && s <= 1) {
-      hourChime.currentTime = 0;
-      hourChime.play().catch(()=>{});
+      playCasioBeep(2048, 0.15);
       lastHour = h;
     }
 
@@ -403,7 +446,6 @@
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     date.textContent = now.toLocaleDateString('es-ES', options);
 
-    // Verificación de Alarma
     if (alarmActive && alarmTime && !isRinging) {
       const currentHM = `${two(now.getHours())}:${two(now.getMinutes())}`;
       if (currentHM === alarmTime) {
@@ -423,22 +465,25 @@
 
   function triggerAlarm() {
     isRinging = true;
-    alarmSound.currentTime = 0;
-    alarmSound.play().catch(()=>{});
+    
+    playCasioDoubleBeep();
+    alarmInterval = setInterval(playCasioDoubleBeep, 1000);
     
     if ('vibrate' in navigator) {
-      navigator.vibrate([500, 250, 500]);
+      navigator.vibrate([100, 50, 100]);
       vibrationInterval = setInterval(() => {
-        navigator.vibrate([500, 250, 500]);
-      }, 2500);
+        navigator.vibrate([100, 50, 100]);
+      }, 1000);
     }
 
     stopAlarmBtn.style.display = 'block';
   }
 
   stopAlarmBtn.addEventListener('click', () => {
-    alarmSound.pause();
-    alarmSound.currentTime = 0;
+    if (alarmInterval) {
+      clearInterval(alarmInterval);
+      alarmInterval = null;
+    }
     if (vibrationInterval) {
       clearInterval(vibrationInterval);
       vibrationInterval = null;
@@ -453,14 +498,12 @@
     showToast('Alarma desactivada');
   });
 
+  // Ajusta la variable CSS multiplicadora de tamaño
   function applySize(){
     const pct = parseInt(sizeSel.value, 10) || 100;
-    const baseRem = 7.5;
-    clock.style.fontSize = (baseRem * (pct/100)) + 'rem';
-    date.style.fontSize = (baseRem * 0.35 * (pct/100)) + 'rem';
+    document.documentElement.style.setProperty('--size-factor', pct / 100);
   }
 
-  // Visibilidad de controles
   function toggleControls() {
     if (controls.style.display === 'flex') {
       hideControls();
@@ -490,7 +533,6 @@
     }, 8000);
   }
 
-  // Eventos de botones flotantes
   settingsToggle.addEventListener('click', (e) => {
     e.stopPropagation();
     toggleControls();
@@ -521,7 +563,6 @@
     }
   });
 
-  // Eventos de Ajustes
   formatSel.addEventListener('change', ()=>{ updateClock(); savePrefs(); });
   
   brightnessSel.addEventListener('change', ()=>{
@@ -544,14 +585,13 @@
     savePrefs(); 
   });
 
-  // Eventos de la Alarma
   setAlarmBtn.addEventListener('click', ()=>{
     if (alarmInput.value) {
       alarmTime = alarmInput.value;
       alarmActive = true;
       updateAlarmUI();
       savePrefs();
-      showToast('Alarma programada a las ' + alarmTime);
+      showToast('Alarma Casio activada para las ' + alarmTime);
     } else {
       showToast('Selecciona una hora válida');
     }
@@ -561,7 +601,10 @@
     alarmTime = null;
     alarmActive = false;
     isRinging = false;
-    alarmSound.pause();
+    if (alarmInterval) {
+      clearInterval(alarmInterval);
+      alarmInterval = null;
+    }
     if (vibrationInterval) {
       clearInterval(vibrationInterval);
       vibrationInterval = null;
@@ -580,7 +623,6 @@
     }
   });
 
-  // Inicialización
   updateClock();
   setInterval(updateClock, 1000);
 </script>
