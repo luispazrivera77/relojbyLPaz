@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Reloj Minimalista Pro</title>
+<title>Reloj Minimalista por LPaz</title>
 <style>
   :root { 
     --accent-color: #00ff00;
     --bg-color: #000000;
     --clock-brightness: 1;
-    --size-factor: 1; /* Factor multiplicador para el tamaño */
+    --size-factor: 1;
   }
 
   * {
@@ -24,7 +24,7 @@
     align-items: center;
     justify-content: center;
     height: 100vh;
-    height: 100dvh; /* Altura dinámica para navegadores móviles */
+    height: 100dvh;
     font-family: monospace;
     background: var(--bg-color);
     color: var(--accent-color);
@@ -47,7 +47,7 @@
     padding: 0 10px;
   }
 
-  /* Cálculo automático con clamp(mínimo, valor_dinámico, máximo) */
+  /* Escalado dinámico responsivo */
   #clock {
     font-size: calc(clamp(3.2rem, 14vw, 12rem) * var(--size-factor));
     letter-spacing: 2px;
@@ -172,6 +172,31 @@
   .modal-content h2 { margin-top: 0; color: var(--accent-color); border-bottom: 1px solid #333; padding-bottom: 10px; }
   .modal-content ul { padding-left: 20px; line-height: 1.6; font-size: 0.9rem; }
   .modal-content li { margin-bottom: 8px; }
+
+  /* Estilos para la sección de Contacto / WhatsApp */
+  .contact-section {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+  }
+  .whatsapp-link {
+    color: #25D366;
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: opacity 0.2s;
+  }
+  .whatsapp-link:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+  }
+
   .close-modal-btn {
     display: block;
     margin: 20px 0 0 auto;
@@ -262,17 +287,26 @@
   <button id="fullscreenBtn">⛶ Pantalla completa</button>
 </div>
 
+<!-- Modal de Información e Instrucciones -->
 <div id="infoModal" class="modal-overlay">
   <div class="modal-content">
-    <h2>Guía e Información</h2>
+    <h2>Reloj Minimalista por LPaz</h2>
     <ul>
-      <li><strong>Ajuste Automático de Pantalla:</strong> El tamaño del reloj se adapta dinámicamente al girar tu móvil (vertical u horizontal) o al cambiar de pantalla en PC.</li>
-      <li><strong>Ajustes Rápidos:</strong> Haz clic en ⚙️ o toca la pantalla en cualquier lugar para abrir el menú.</li>
-      <li><strong>Ajuste de Brillo:</strong> Selecciona entre 3 niveles para la noche o día.</li>
-      <li><strong>Sonido Estilo Casio:</strong> Utiliza el característico pitido "bip-bip" retro generado digitalmente sin necesidad de internet.</li>
-      <li><strong>Mantener Pantalla Encendida:</strong> Activa automáticamente <em>Wake Lock</em>.</li>
-      <li><strong>Guardado Automático:</strong> Tus preferencias se quedan guardadas en tu navegador.</li>
+      <li><strong>Ajuste Automático de Pantalla:</strong> El tamaño se adapta dinámicamente tanto en computadoras como en móviles (en orientación vertical u horizontal).</li>
+      <li><strong>Ajustes Rápidos:</strong> Haz clic en ⚙️ o toca la pantalla para abrir el panel de personalización.</li>
+      <li><strong>Ajuste de Brillo:</strong> Selecciona entre 3 niveles para no lastimar la vista de noche.</li>
+      <li><strong>Sonido Estilo Casio:</strong> Alarma con el clásico sonido digital sintetizado sin requerir conexión a internet.</li>
+      <li><strong>Modo Pantalla Encendida:</strong> Mantiene la pantalla encendida de forma continua mediante <em>Wake Lock</em>.</li>
+      <li><strong>Guardado Automático:</strong> Guarda tu configuración preferida en el navegador.</li>
     </ul>
+
+    <div class="contact-section">
+      <span>💬</span>
+      <a class="whatsapp-link" href="https://wa.me/56941524196" target="_blank" rel="noopener noreferrer">
+        Contacto LPaz: +56 9 4152 4196
+      </a>
+    </div>
+
     <button id="closeInfoBtn" class="close-modal-btn">Entendido</button>
   </div>
 </div>
@@ -498,7 +532,6 @@
     showToast('Alarma desactivada');
   });
 
-  // Ajusta la variable CSS multiplicadora de tamaño
   function applySize(){
     const pct = parseInt(sizeSel.value, 10) || 100;
     document.documentElement.style.setProperty('--size-factor', pct / 100);
