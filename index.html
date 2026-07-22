@@ -109,7 +109,7 @@
   #settingsToggle { bottom: 20px; right: 20px; }
   #infoToggle { bottom: 20px; left: 20px; }
   #shareToggle { top: 20px; right: 20px; }
-  #castToggle { top: 20px; right: 70px; } /* Botón Transmitir a TV */
+  #castToggle { top: 20px; right: 70px; }
 
   /* Panel de Controles */
   .controls {
@@ -329,7 +329,7 @@
   <div class="modal-content">
     <h2>Reloj Minimalista por LPaz</h2>
     <ul>
-      <li><strong>Transmisión a Smart TV (📺):</strong> Permite enviar la vista del reloj directamente a televisores inteligentes y Chromecasts en tu red Wi-Fi.</li>
+      <li><strong>Transmisión a Smart TV (📺):</strong> Permite transmitir directamente desde tu PC o te guía paso a paso para hacerlo desde Android e iPhone.</li>
       <li><strong>Cambio de Color Automático:</strong> Opción para cambiar el color del reloj automáticamente cada hora.</li>
       <li><strong>Fácil de Compartir (🔗):</strong> Permite enviar o copiar el enlace directo desde PC o móvil.</li>
       <li><strong>Clima Día/Noche:</strong> Temperatura e íconos en tiempo real (Sol/Luna).</li>
@@ -405,9 +405,11 @@
     "#ff3d00", "#00b0ff", "#f4ff81", "#e040fb", "#64ffda", "#ff6e40"
   ];
 
-  // Transmisión a Smart TV usando Presentation API / Remote Playback
+  // Transmisión a Smart TV adaptable para PC y Celulares
   async function castToSmartTV() {
-    if ('PresentationRequest' in window) {
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    if ('PresentationRequest' in window && !isMobile) {
       try {
         const presentationRequest = new PresentationRequest([window.location.href]);
         await presentationRequest.start();
@@ -416,6 +418,13 @@
         if (err.name !== 'NotFoundError' && err.name !== 'NotAllowedError') {
           showToast('No se encontraron Smart TVs cercanas');
         }
+      }
+    } else if (isMobile) {
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      if (isAndroid) {
+        showToast('📱 Toca los 3 puntos (⋮) del navegador y elige "Transmitir"');
+      } else {
+        showToast('📱 Usa "Duplicar Pantalla" desde el Centro de Control de tu iPhone');
       }
     } else {
       showToast('Usa la opción "Enviar/Cast" de tu navegador');
@@ -555,7 +564,7 @@
   function showToast(message) {
     toast.textContent = message;
     toast.classList.add('show');
-    setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    setTimeout(() => { toast.classList.remove('show'); }, 3500);
   }
 
   async function requestWakeLock() {
