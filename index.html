@@ -9,6 +9,7 @@
     --base-rem: 7.5; 
     --accent-color: #00ff00;
     --bg-color: #000000;
+    --clock-brightness: 1;
   }
   body {
     margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -16,41 +17,69 @@
     transition: background 0.3s, color 0.3s;
     overflow: hidden;
   }
+  
+  /* Contenedor principal del reloj y la fecha */
+  #clockContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: var(--clock-brightness);
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+  }
+
   #clock {
     font-size: calc(var(--base-rem) * 1rem);
     letter-spacing: 4px;
-    cursor: pointer;
-    user-select: none;
     text-align: center;
   }
+
   #date {
     font-size: calc(var(--base-rem) * 0.35rem);
     letter-spacing: 2px;
     margin-top: 10px;
     opacity: 0.8;
-    user-select: none;
     text-align: center;
   }
-  
-  /* Botón de ajustes flotante */
-  #settingsToggle {
+
+  /* Indicador visual de Alarma Activa */
+  #alarmIndicator {
+    display: none;
+    font-size: calc(var(--base-rem) * 0.25rem);
+    margin-top: 15px;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  /* Botones flotantes (Ajustes e Info) */
+  .icon-btn {
     position: absolute;
     bottom: 20px;
-    right: 20px;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: inherit;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     padding: 8px 12px;
     border-radius: 50%;
     cursor: pointer;
     z-index: 10;
-    transition: transform 0.2s;
+    transition: transform 0.2s, background 0.2s;
   }
-  #settingsToggle:hover {
+  .icon-btn:hover {
     transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.2);
   }
+  #settingsToggle { right: 20px; }
+  #infoToggle { left: 20px; }
 
+  /* Panel de Controles/Ajustes */
   .controls {
     position: absolute;
     bottom: 80px;
@@ -58,7 +87,7 @@
     border: 1px solid #333;
     padding: 15px;
     border-radius: 8px;
-    display: none; /* Se maneja por JS */
+    display: none;
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
@@ -88,6 +117,7 @@
     font-size: 1.1rem;
     border-radius: 4px;
     animation: pulse 1s infinite;
+    z-index: 10;
   }
 
   @keyframes pulse {
@@ -96,12 +126,49 @@
     100% { transform: scale(1); }
   }
 
-  /* Notificaciones elegantes de UI */
+  /* Modal de Información */
+  .modal-overlay {
+    position: fixed;
+    top:0; left:0; width:100vw; height:100vh;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+  }
+  .modal-content {
+    background: #181818;
+    color: #eee;
+    border: 1px solid #444;
+    padding: 25px;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.9);
+  }
+  .modal-content h2 { margin-top: 0; color: var(--accent-color); border-bottom: 1px solid #333; padding-bottom: 10px; }
+  .modal-content ul { padding-left: 20px; line-height: 1.6; font-size: 0.9rem; }
+  .modal-content li { margin-bottom: 8px; }
+  .close-modal-btn {
+    display: block;
+    margin: 20px 0 0 auto;
+    background: var(--accent-color);
+    color: #000;
+    border: none;
+    padding: 8px 16px;
+    font-weight: bold;
+    border-radius: 4px;
+  }
+
+  /* Notificaciones Toast */
   .toast {
     position: absolute;
     top: 20px;
     right: 20px;
-    background: rgba(30, 30, 30, 0.9);
+    background: rgba(30, 30, 30, 0.95);
     color: #fff;
     border: 1px solid var(--accent-color);
     padding: 12px 20px;
@@ -114,26 +181,36 @@
     transition: opacity 0.3s, transform 0.3s;
     pointer-events: none;
   }
-  .toast.show {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  .toast.show { opacity: 1; transform: translateY(0); }
 </style>
 </head>
 <body>
 
-<div id="clock" tabindex="0" aria-label="Reloj"></div>
-<div id="date"></div>
+<div id="clockContainer" tabindex="0" aria-label="Reloj">
+  <div id="clock"></div>
+  <div id="date"></div>
+  <div id="alarmIndicator" title="Alarma activa">⏰ <span id="alarmIndicatorTime">--:--</span></div>
+</div>
 
 <button id="stopAlarmBtn">🔕 Detener Alarma</button>
 
-<button id="settingsToggle" title="Ajustes">⚙️</button>
+<!-- Botones de Interfaz Flotantes -->
+<button id="infoToggle" class="icon-btn" title="Información e Instrucciones">ℹ️</button>
+<button id="settingsToggle" class="icon-btn" title="Ajustes">⚙️</button>
 
+<!-- Panel de Configuración -->
 <div class="controls" id="controls" aria-live="polite">
   <label>Formato:
     <select id="format">
       <option value="24">24h</option>
       <option value="12">12h</option>
+    </select>
+  </label>
+  <label>Brillo:
+    <select id="brightness">
+      <option value="1">Alto (100%)</option>
+      <option value="0.6">Medio (60%)</option>
+      <option value="0.3">Bajo (30%)</option>
     </select>
   </label>
   <label>Tamaño:
@@ -168,20 +245,44 @@
   <button id="fullscreenBtn">⛶ Pantalla completa</button>
 </div>
 
-<!-- Elemento contenedor para notificaciones tipo Toast -->
+<!-- Modal de Información e Instrucciones -->
+<div id="infoModal" class="modal-overlay">
+  <div class="modal-content">
+    <h2>Guía e Información</h2>
+    <ul>
+      <li><strong>Ajustes Rápidos:</strong> Haz clic en el ícono del engranaje (⚙️) o toca la pantalla en cualquier lugar para mostrar/ocultar el menú. Se ocultará automáticamente tras 8 segundos de inactividad.</li>
+      <li><strong>Ajuste de Brillo:</strong> Elige entre 3 niveles de intensidad (Alto, Medio, Bajo), ideal para usar de noche sin molestar la vista.</li>
+      <li><strong>Alarma & Vibración:</strong> Cuando configures la alarma, aparecerá un ícono ⏰ en pantalla. Al sonar la alarma se activará el audio y la vibración (en móviles). Presiona el botón rojo para detenerla.</li>
+      <li><strong>Mantener Pantalla Encendida:</strong> La aplicación activa automáticamente la función <em>Wake Lock</em> para prevenir que la pantalla del dispositivo se suspenda.</li>
+      <li><strong>Aviso de Hora:</strong> Sonará una suave campanada al inicio de cada hora.</li>
+      <li><strong>Guardado Automático:</strong> Tus preferencias de formato, color, tamaño, brillo y alarma activa se guardan en el navegador.</li>
+    </ul>
+    <button id="closeInfoBtn" class="close-modal-btn">Entendido</button>
+  </div>
+</div>
+
+<!-- Notificación Toast -->
 <div id="toast" class="toast" role="alert"></div>
 
-<!-- Audios con fallback de respaldo integrado -->
+<!-- Audios -->
 <audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto" loop></audio>
 <audio id="hourChime" src="https://actions.google.com/sounds/v1/alarms/gentle_bell.ogg" preload="auto"></audio>
 
 <script>
   // Elementos
+  const clockContainer = document.getElementById('clockContainer');
   const clock = document.getElementById('clock');
   const date = document.getElementById('date');
+  const alarmIndicator = document.getElementById('alarmIndicator');
+  const alarmIndicatorTime = document.getElementById('alarmIndicatorTime');
   const controls = document.getElementById('controls');
   const settingsToggle = document.getElementById('settingsToggle');
+  const infoToggle = document.getElementById('infoToggle');
+  const infoModal = document.getElementById('infoModal');
+  const closeInfoBtn = document.getElementById('closeInfoBtn');
+  
   const formatSel = document.getElementById('format');
+  const brightnessSel = document.getElementById('brightness');
   const sizeSel = document.getElementById('size');
   const fontSel = document.getElementById('font');
   const colorSel = document.getElementById('color');
@@ -191,6 +292,7 @@
   const clearAlarmBtn = document.getElementById('clearAlarm');
   const stopAlarmBtn = document.getElementById('stopAlarmBtn');
   const fullscreenBtn = document.getElementById('fullscreenBtn');
+  
   const alarmSound = document.getElementById('alarmSound');
   const hourChime = document.getElementById('hourChime');
   const toast = document.getElementById('toast');
@@ -204,52 +306,61 @@
   let wakeLock = null;
   let vibrationInterval = null;
 
-  // Sistema de notificación discreto para evitar alerts intrusivos
+  // Sistema de notificación discreto
   function showToast(message) {
     toast.textContent = message;
     toast.classList.add('show');
-    setTimeout(() => {
-      toast.classList.remove('show');
-    }, 3000);
+    setTimeout(() => { toast.classList.remove('show'); }, 3000);
   }
 
-  // 1. Prevención de Apagado de Pantalla (Wake Lock)
+  // Prevención de Apagado de Pantalla (Wake Lock)
   async function requestWakeLock() {
     try {
       if ('wakeLock' in navigator) {
         wakeLock = await navigator.wakeLock.request('screen');
       }
     } catch (err) {
-      console.warn(`No se pudo activar el bloqueo de suspensión: ${err.message}`);
+      console.warn(`Wake Lock no soportado: ${err.message}`);
     }
   }
 
-  // Volver a activar Wake Lock si la app vuelve a estar visible
   document.addEventListener('visibilitychange', async () => {
     if (wakeLock !== null && document.visibilityState === 'visible') {
       await requestWakeLock();
     }
   });
 
-  // Inicializar Wake Lock al hacer clic en cualquier lado
   document.addEventListener('click', () => {
     if (!wakeLock) requestWakeLock();
   }, { once: true });
 
-  // Cargar preferencias
+  // Cargar preferencias guardadas
   (function loadPrefs(){
     const saved = localStorage.getItem('clock_prefs');
     if(!saved) return;
     const prefs = JSON.parse(saved);
     if(prefs.format) formatSel.value = prefs.format;
-    if(prefs.size)   sizeSel.value = prefs.size;
-    if(prefs.font)   { fontSel.value = prefs.font; document.body.style.fontFamily = prefs.font; }
-    if(prefs.color)  { colorSel.value = prefs.color; document.body.style.color = prefs.color; document.documentElement.style.setProperty('--accent-color', prefs.color); }
-    if(prefs.bg)     { bgSel.value = prefs.bg; document.body.style.backgroundColor = prefs.bg; document.documentElement.style.setProperty('--bg-color', prefs.bg); }
+    if(prefs.brightness) {
+      brightnessSel.value = prefs.brightness;
+      document.documentElement.style.setProperty('--clock-brightness', prefs.brightness);
+    }
+    if(prefs.size) sizeSel.value = prefs.size;
+    if(prefs.font) { fontSel.value = prefs.font; document.body.style.fontFamily = prefs.font; }
+    if(prefs.color) { 
+      colorSel.value = prefs.color; 
+      document.body.style.color = prefs.color; 
+      document.documentElement.style.setProperty('--accent-color', prefs.color); 
+    }
+    if(prefs.bg) { 
+      bgSel.value = prefs.bg; 
+      document.body.style.backgroundColor = prefs.bg; 
+      document.documentElement.style.setProperty('--bg-color', prefs.bg); 
+    }
     if(prefs.alarmTime) {
       alarmInput.value = prefs.alarmTime;
       alarmTime = prefs.alarmTime;
       alarmActive = true;
+      updateAlarmUI();
     }
     applySize();
   })();
@@ -257,6 +368,7 @@
   function savePrefs(){
     const prefs = {
       format: formatSel.value,
+      brightness: brightnessSel.value,
       size: sizeSel.value,
       font: fontSel.value,
       color: colorSel.value,
@@ -275,7 +387,7 @@
     const s = now.getSeconds();
     let suffix = '';
 
-    // Sonido cada hora en punto
+    // Sonido hora en punto
     if (h !== lastHour && m === 0 && s <= 1) {
       hourChime.currentTime = 0;
       hourChime.play().catch(()=>{});
@@ -288,16 +400,10 @@
     }
     clock.textContent = `${two(h)}:${two(m)}:${two(s)}${suffix}`;
 
-    // Actualizar fecha en español
-    const options = { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    };
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     date.textContent = now.toLocaleDateString('es-ES', options);
 
-    // Activación de Alarma
+    // Verificación de Alarma
     if (alarmActive && alarmTime && !isRinging) {
       const currentHM = `${two(now.getHours())}:${two(now.getMinutes())}`;
       if (currentHM === alarmTime) {
@@ -306,13 +412,20 @@
     }
   }
 
-  // Activa sonido, vibración intermitente continua y muestra botón de apagado
+  function updateAlarmUI() {
+    if (alarmActive && alarmTime) {
+      alarmIndicatorTime.textContent = alarmTime;
+      alarmIndicator.style.display = 'flex';
+    } else {
+      alarmIndicator.style.display = 'none';
+    }
+  }
+
   function triggerAlarm() {
     isRinging = true;
     alarmSound.currentTime = 0;
     alarmSound.play().catch(()=>{});
     
-    // Vibración recurrente en dispositivos móviles (cada 2.5 segundos)
     if ('vibrate' in navigator) {
       navigator.vibrate([500, 250, 500]);
       vibrationInterval = setInterval(() => {
@@ -323,7 +436,6 @@
     stopAlarmBtn.style.display = 'block';
   }
 
-  // Detener Alarma activa
   stopAlarmBtn.addEventListener('click', () => {
     alarmSound.pause();
     alarmSound.currentTime = 0;
@@ -331,17 +443,16 @@
       clearInterval(vibrationInterval);
       vibrationInterval = null;
     }
-    if ('vibrate' in navigator) {
-      navigator.vibrate(0); // Forzar detención final
-    }
+    if ('vibrate' in navigator) navigator.vibrate(0);
+    
     stopAlarmBtn.style.display = 'none';
     isRinging = false;
-    alarmActive = false; // Desactivar para evitar repeticiones del mismo minuto
+    alarmActive = false; 
+    updateAlarmUI();
     savePrefs();
     showToast('Alarma desactivada');
   });
 
-  // Tamaño del reloj según selector
   function applySize(){
     const pct = parseInt(sizeSel.value, 10) || 100;
     const baseRem = 7.5;
@@ -349,7 +460,7 @@
     date.style.fontSize = (baseRem * 0.35 * (pct/100)) + 'rem';
   }
 
-  // Mostrar/ocultar controles de manera inteligente
+  // Visibilidad de controles
   function toggleControls() {
     if (controls.style.display === 'flex') {
       hideControls();
@@ -379,29 +490,45 @@
     }, 8000);
   }
 
-  // Eventos de interacción con el botón y el reloj
+  // Eventos de botones flotantes
   settingsToggle.addEventListener('click', (e) => {
     e.stopPropagation();
     toggleControls();
   });
-  clock.addEventListener('click', showControls);
+  clockContainer.addEventListener('click', showControls);
 
-  // Mantener visibles mientras se edita o hay interacción
+  infoToggle.addEventListener('click', () => {
+    infoModal.style.display = 'flex';
+  });
+
+  closeInfoBtn.addEventListener('click', () => {
+    infoModal.style.display = 'none';
+  });
+
+  infoModal.addEventListener('click', (e) => {
+    if (e.target === infoModal) infoModal.style.display = 'none';
+  });
+
   controls.addEventListener('mouseenter', resetHideTimer);
   controls.addEventListener('input', resetHideTimer);
   controls.addEventListener('change', resetHideTimer);
   controls.addEventListener('focusin', () => clearTimeout(hideTimeout));
   controls.addEventListener('focusout', resetHideTimer);
   
-  // Ocultar al hacer clic fuera del panel de control
   document.addEventListener('click', (e) => {
-    if (!controls.contains(e.target) && e.target !== settingsToggle && e.target !== clock) {
+    if (!controls.contains(e.target) && e.target !== settingsToggle && !clockContainer.contains(e.target)) {
       hideControls();
     }
   });
 
-  // Personalización interactiva de colores y estilos
+  // Eventos de Ajustes
   formatSel.addEventListener('change', ()=>{ updateClock(); savePrefs(); });
+  
+  brightnessSel.addEventListener('change', ()=>{
+    document.documentElement.style.setProperty('--clock-brightness', brightnessSel.value);
+    savePrefs();
+  });
+
   sizeSel.addEventListener('change', ()=>{ applySize(); savePrefs(); });
   fontSel.addEventListener('change', ()=>{ document.body.style.fontFamily = fontSel.value; savePrefs(); });
   
@@ -422,10 +549,11 @@
     if (alarmInput.value) {
       alarmTime = alarmInput.value;
       alarmActive = true;
+      updateAlarmUI();
       savePrefs();
-      showToast('Alarma establecida para las ' + alarmTime);
+      showToast('Alarma programada a las ' + alarmTime);
     } else {
-      showToast('Por favor, selecciona una hora válida');
+      showToast('Selecciona una hora válida');
     }
   });
   
@@ -439,11 +567,11 @@
       vibrationInterval = null;
     }
     stopAlarmBtn.style.display = 'none';
+    updateAlarmUI();
     savePrefs();
-    showToast('Alarma eliminada');
+    showToast('Alarma desactivada');
   });
 
-  // Gestión de pantalla completa nativa
   fullscreenBtn.addEventListener('click', ()=>{
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(()=>{});
@@ -452,7 +580,7 @@
     }
   });
 
-  // Inicialización y arranque del ciclo
+  // Inicialización
   updateClock();
   setInterval(updateClock, 1000);
 </script>
