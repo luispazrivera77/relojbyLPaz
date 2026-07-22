@@ -28,7 +28,7 @@
     font-family: monospace;
     background: var(--bg-color);
     color: var(--accent-color);
-    transition: background 0.3s, color 0.3s;
+    transition: background 0.3s, color 0.5s ease;
     overflow: hidden;
   }
   
@@ -296,6 +296,12 @@
       <option value="'Courier New', monospace">Courier</option>
     </select>
   </label>
+  <label>Modo Color:
+    <select id="colorMode">
+      <option value="manual">Fijo (Manual)</option>
+      <option value="auto">Ciclado (Cada 1h)</option>
+    </select>
+  </label>
   <label>Color números:
     <input type="color" id="color" value="#00ff00" />
   </label>
@@ -321,8 +327,9 @@
   <div class="modal-content">
     <h2>Reloj Minimalista por LPaz</h2>
     <ul>
+      <li><strong>Cambio de Color Automático:</strong> Puedes elegir entre un color fijo o que cambie automáticamente cada hora entre tonos dinámicos.</li>
       <li><strong>Fácil de Compartir:</strong> Usa el ícono 🔗 superior para enviar o copiar el enlace directo desde PC o móvil.</li>
-      <li><strong>Clima Día/Noche:</strong> Muestra la temperatura en tiempo real e íconos dinámicos (Sol de día, Luna de noche).</li>
+      <li><strong>Clima Día/Noche:</strong> Temperatura en tiempo real e íconos dinámicos (Sol de día, Luna de noche).</li>
       <li><strong>Sin Instalación:</strong> Funciona directamente en cualquier navegador web.</li>
       <li><strong>Multiplataforma:</strong> Compatible con PC, Android e iPhone (vertical u horizontal).</li>
       <li><strong>Ajustes Rápidos:</strong> Haz clic en ⚙️ o toca la pantalla para abrir la configuración.</li>
@@ -364,6 +371,7 @@
   const brightnessSel = document.getElementById('brightness');
   const sizeSel = document.getElementById('size');
   const fontSel = document.getElementById('font');
+  const colorModeSel = document.getElementById('colorMode');
   const colorSel = document.getElementById('color');
   const bgSel = document.getElementById('bgcolor');
   const cityInput = document.getElementById('cityInput');
@@ -386,6 +394,43 @@
   let alarmInterval = null;
   let audioCtx = null;
   let currentCityData = null;
+
+  // Paleta de colores vibrantes para el cambio automático cada hora
+  const hourlyColors = [
+    "#00ff00", // Verde Neón (00:00)
+    "#00ffff", // Cyan (01:00)
+    "#ff00ff", // Magenta (02:00)
+    "#ffff00", // Amarillo (03:00)
+    "#ff8800", // Naranja (04:00)
+    "#0088ff", // Azul Neón (05:00)
+    "#ff3366", // Rosa / Rojo Neón (06:00)
+    "#ffffff", // Blanco Puro (07:00)
+    "#a6ff00", // Lima (08:00)
+    "#00ffaa", // Menta (09:00)
+    "#ff99cc", // Rosa Claro (10:00)
+    "#ffcc00", // Oro (11:00)
+    "#00e5ff", // Turquoise (12:00)
+    "#ff0055", // Carmesí (13:00)
+    "#76ff03", // Verde Eléctrico (14:00)
+    "#d500f9", // Púrpura (15:00)
+    "#ffab00", // Ámbar (16:00)
+    "#1de9b6", // Verde Agua (17:00)
+    "#ff3d00", // Coral (18:00)
+    "#00b0ff", // Azul Cielo (19:00)
+    "#f4ff81", // Amarillo Neón (20:00)
+    "#e040fb", // Violeta (21:00)
+    "#64ffda", // Aquamarina (22:00)
+    "#ff6e40"  // Salmón (23:00)
+  ];
+
+  function applyColorForHour(hour) {
+    if (colorModeSel.value === 'auto') {
+      const autoColor = hourlyColors[hour % 24];
+      document.body.style.color = autoColor;
+      document.documentElement.style.setProperty('--accent-color', autoColor);
+      colorSel.value = autoColor;
+    }
+  }
 
   async function shareClock() {
     const shareData = {
@@ -413,10 +458,9 @@
       .catch(() => showToast('Error al copiar enlace'));
   }
 
-  // Mapeo inteligente con detección de Día/Noche (isDay)
   function getWeatherIcon(code, isDay) {
-    if (code === 0) return isDay ? '☀️' : '🌙'; // Despejado
-    if (code >= 1 && code <= 3) return isDay ? '⛅' : '☁️'; // Parcialmente nublado
+    if (code === 0) return isDay ? '☀️' : '🌙';
+    if (code >= 1 && code <= 3) return isDay ? '⛅' : '☁️';
     if (code >= 45 && code <= 48) return '🌫️';
     if (code >= 51 && code <= 67) return '🌧️';
     if (code >= 71 && code <= 77) return '❄️';
@@ -460,7 +504,6 @@
         const temp = Math.round(weatherData.current_weather.temperature);
         const code = weatherData.current_weather.weathercode;
         
-        // Evaluar si es de día usando la API o la hora actual
         const isDay = weatherData.current_weather.is_day !== undefined 
           ? Boolean(weatherData.current_weather.is_day) 
           : (new Date().getHours() >= 6 && new Date().getHours() < 20);
@@ -549,11 +592,16 @@
       applySize();
     }
     if(prefs.font) { fontSel.value = prefs.font; document.body.style.fontFamily = prefs.font; }
-    if(prefs.color) { 
+    if(prefs.colorMode) { colorModeSel.value = prefs.colorMode; }
+    
+    if(colorModeSel.value === 'auto') {
+      applyColorForHour(new Date().getHours());
+    } else if(prefs.color) { 
       colorSel.value = prefs.color; 
       document.body.style.color = prefs.color; 
       document.documentElement.style.setProperty('--accent-color', prefs.color); 
     }
+
     if(prefs.bg) { 
       bgSel.value = prefs.bg; 
       document.body.style.backgroundColor = prefs.bg; 
@@ -578,6 +626,7 @@
       brightness: brightnessSel.value,
       size: sizeSel.value,
       font: fontSel.value,
+      colorMode: colorModeSel.value,
       color: colorSel.value,
       bg: bgSel.value,
       alarmTime: alarmActive ? alarmTime : null,
@@ -595,13 +644,11 @@
     const s = now.getSeconds();
     let suffix = '';
 
-    // Reevaluar y actualizar clima cada 1 hora
-    if (m === 0 && s === 0) {
-      updateWeatherData();
-    }
-
+    // Cambio de hora en punto
     if (h !== lastHour && m === 0 && s <= 1) {
       playCasioBeep(2048, 0.15);
+      applyColorForHour(h); // Cambia el color automáticamente si la opción está activa
+      updateWeatherData();
       lastHour = h;
     }
 
@@ -754,7 +801,20 @@
   sizeSel.addEventListener('change', ()=>{ applySize(); savePrefs(); });
   fontSel.addEventListener('change', ()=>{ document.body.style.fontFamily = fontSel.value; savePrefs(); });
   
+  colorModeSel.addEventListener('change', ()=>{
+    if (colorModeSel.value === 'auto') {
+      applyColorForHour(new Date().getHours());
+      showToast('Color automático activado (cada 1h)');
+    } else {
+      document.body.style.color = colorSel.value;
+      document.documentElement.style.setProperty('--accent-color', colorSel.value);
+      showToast('Color manual activado');
+    }
+    savePrefs();
+  });
+
   colorSel.addEventListener('input', ()=>{ 
+    colorModeSel.value = 'manual'; // Al tocar el selector de color vuelve a manual
     document.body.style.color = colorSel.value; 
     document.documentElement.style.setProperty('--accent-color', colorSel.value);
     savePrefs(); 
