@@ -32,7 +32,7 @@
     overflow: hidden;
   }
   
-  /* Contenedor principal del reloj y la fecha */
+  /* Contenedor principal del reloj, fecha y clima */
   #clockContainer {
     display: flex;
     flex-direction: column;
@@ -63,6 +63,17 @@
     opacity: 0.85;
     text-align: center;
     text-transform: capitalize;
+  }
+
+  /* Widget de Clima */
+  #weather {
+    display: none;
+    font-size: calc(clamp(0.85rem, 2.5vw, 1.8rem) * var(--size-factor));
+    margin-top: 0.8rem;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.9;
+    text-align: center;
   }
 
   /* Indicador visual de Alarma Activa */
@@ -116,7 +127,7 @@
     box-shadow: 0 4px 20px rgba(0,0,0,0.8);
   }
   label { font-size: 0.85rem; color:#ddd; display: flex; flex-direction: column; gap: 4px; }
-  select, input[type="color"], input[type="time"], button {
+  select, input[type="color"], input[type="time"], input[type="text"], button {
     padding:.4rem .6rem; border:1px solid #444; border-radius:4px; background:#111; color:#fff;
     font-family: inherit;
   }
@@ -126,6 +137,14 @@
   }
   button:hover { background:#333; }
   
+  .weather-input-group {
+    display: flex;
+    gap: 4px;
+  }
+  .weather-input-group input {
+    width: 110px;
+  }
+
   /* Botón de detener alarma */
   #stopAlarmBtn {
     background: #ff3333;
@@ -234,6 +253,7 @@
 <div id="clockContainer" tabindex="0" aria-label="Reloj">
   <div id="clock"></div>
   <div id="date"></div>
+  <div id="weather"></div>
   <div id="alarmIndicator" title="Alarma activa">⏰ <span id="alarmIndicatorTime">--:--</span></div>
 </div>
 
@@ -279,6 +299,12 @@
   <label>Color fondo:
     <input type="color" id="bgcolor" value="#000000" />
   </label>
+  <label>Ciudad Clima:
+    <div class="weather-input-group">
+      <input type="text" id="cityInput" placeholder="Ej: Santiago" />
+      <button id="searchCityBtn">🔍</button>
+    </div>
+  </label>
   <label>Alarma:
     <input type="time" id="alarmTime" />
   </label>
@@ -292,11 +318,12 @@
   <div class="modal-content">
     <h2>Reloj Minimalista por LPaz</h2>
     <ul>
+      <li><strong>Clima Actualizable:</strong> Permite ingresar cualquier ciudad para consultar la temperatura e ícono del clima en tiempo real (actualizado cada hora).</li>
       <li><strong>Sin Instalación:</strong> Funciona directamente en cualquier navegador web sin descargar aplicaciones adicionales.</li>
       <li><strong>Multiplataforma:</strong> Totalmente compatible y adaptable a pantallas de PC, Android e iPhone (orientación vertical u horizontal).</li>
       <li><strong>Ajustes Rápidos:</strong> Haz clic en ⚙️ o toca la pantalla para abrir el panel de personalización.</li>
       <li><strong>Ajuste de Brillo:</strong> Selecciona entre 3 niveles para no lastimar la vista de noche.</li>
-      <li><strong>Sonido Estilo Casio:</strong> Alarma con el clásico sonido digital sintetizado sin requerir conexión a internet.</li>
+      <li><strong>Sonido Estilo Casio:</strong> Alarma con el clásico sonido digital sintetizado.</li>
       <li><strong>Modo Pantalla Encendida:</strong> Mantiene la pantalla encendida de forma continua mediante <em>Wake Lock</em>.</li>
       <li><strong>Guardado Automático:</strong> Guarda tu configuración preferida en el navegador.</li>
     </ul>
@@ -319,6 +346,7 @@
   const clockContainer = document.getElementById('clockContainer');
   const clock = document.getElementById('clock');
   const date = document.getElementById('date');
+  const weatherDiv = document.getElementById('weather');
   const alarmIndicator = document.getElementById('alarmIndicator');
   const alarmIndicatorTime = document.getElementById('alarmIndicatorTime');
   const controls = document.getElementById('controls');
@@ -333,6 +361,8 @@
   const fontSel = document.getElementById('font');
   const colorSel = document.getElementById('color');
   const bgSel = document.getElementById('bgcolor');
+  const cityInput = document.getElementById('cityInput');
+  const searchCityBtn = document.getElementById('searchCityBtn');
   const alarmInput = document.getElementById('alarmTime');
   const setAlarmBtn = document.getElementById('setAlarm');
   const clearAlarmBtn = document.getElementById('clearAlarm');
@@ -350,6 +380,66 @@
   let vibrationInterval = null;
   let alarmInterval = null;
   let audioCtx = null;
+  let currentCityData = null; // { name, lat, lon }
+
+  // Mapeo de códigos de clima de Open-Meteo a Emojis e Íconos
+  function getWeatherIcon(code) {
+    if (code === 0) return '☀️'; // Despejado
+    if (code >= 1 && code <= 3) return '⛅'; // Parcialmente nublado
+    if (code >= 45 && code <= 48) return '🌫️'; // Niebla
+    if (code >= 51 && code <= 67) return '🌧️'; // Llovizna/Lluvia
+    if (code >= 71 && code <= 77) return '❄️'; // Nieve
+    if (code >= 80 && code <= 82) return '🌦️'; // Chubascos
+    if (code >= 95) return '⛈️'; // Tormenta
+    return '🌡️';
+  }
+
+  // Obtener geocodificación de la ciudad
+  async function fetchCityWeather(cityName) {
+    try {
+      const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=es&format=json`);
+      const geoData = await geoRes.json();
+
+      if (!geoData.results || geoData.results.length === 0) {
+        showToast('Ciudad no encontrada');
+        return;
+      }
+
+      const city = geoData.results[0];
+      currentCityData = {
+        name: city.name,
+        lat: city.latitude,
+        lon: city.longitude
+      };
+
+      await updateWeatherData();
+      savePrefs();
+      showToast(`Clima cargado para ${city.name}`);
+    } catch (err) {
+      showToast('Error al conectar con el servicio de clima');
+      console.error(err);
+    }
+  }
+
+  // Consultar temperatura actual con Open-Meteo
+  async function updateWeatherData() {
+    if (!currentCityData) return;
+    try {
+      const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${currentCityData.lat}&longitude=${currentCityData.lon}&current_weather=true`);
+      const weatherData = await weatherRes.json();
+
+      if (weatherData.current_weather) {
+        const temp = Math.round(weatherData.current_weather.temperature);
+        const code = weatherData.current_weather.weathercode;
+        const icon = getWeatherIcon(code);
+
+        weatherDiv.textContent = `${icon} ${currentCityData.name} ${temp}°C`;
+        weatherDiv.style.display = 'block';
+      }
+    } catch (err) {
+      console.warn('No se pudo actualizar el clima:', err);
+    }
+  }
 
   function getAudioContext() {
     if (!audioCtx) {
@@ -443,6 +533,11 @@
       alarmActive = true;
       updateAlarmUI();
     }
+    if(prefs.cityData) {
+      currentCityData = prefs.cityData;
+      cityInput.value = currentCityData.name;
+      updateWeatherData();
+    }
   })();
 
   function savePrefs(){
@@ -453,7 +548,8 @@
       font: fontSel.value,
       color: colorSel.value,
       bg: bgSel.value,
-      alarmTime: alarmActive ? alarmTime : null
+      alarmTime: alarmActive ? alarmTime : null,
+      cityData: currentCityData
     };
     localStorage.setItem('clock_prefs', JSON.stringify(prefs));
   }
@@ -466,6 +562,11 @@
     const m = now.getMinutes();
     const s = now.getSeconds();
     let suffix = '';
+
+    // Actualizar clima automáticamente cada 1 hora (en el minuto 0 y segundo 0)
+    if (m === 0 && s === 0) {
+      updateWeatherData();
+    }
 
     if (h !== lastHour && m === 0 && s <= 1) {
       playCasioBeep(2048, 0.15);
@@ -583,6 +684,19 @@
 
   infoModal.addEventListener('click', (e) => {
     if (e.target === infoModal) infoModal.style.display = 'none';
+  });
+
+  // Evento para buscar ciudad
+  searchCityBtn.addEventListener('click', () => {
+    if (cityInput.value.trim() !== '') {
+      fetchCityWeather(cityInput.value.trim());
+    }
+  });
+
+  cityInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && cityInput.value.trim() !== '') {
+      fetchCityWeather(cityInput.value.trim());
+    }
   });
 
   controls.addEventListener('mouseenter', resetHideTimer);
