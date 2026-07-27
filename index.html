@@ -114,7 +114,7 @@
     border: 1px solid rgba(255, 255, 255, 0.15);
   }
 
-  /* Botones flotantes */
+  /* Botones flotantes distribuidos en las 4 esquinas */
   .icon-btn {
     position: absolute;
     background: rgba(255, 255, 255, 0.1);
@@ -134,7 +134,7 @@
   #settingsToggle { bottom: 20px; right: 20px; }
   #infoToggle { bottom: 20px; left: 20px; }
   #shareToggle { top: 20px; right: 20px; }
-  #castToggle { top: 20px; right: 70px; }
+  #castToggle { top: 20px; left: 20px; } /* Reubicado a la esquina superior izquierda */
 
   /* Panel de Controles */
   .controls {
@@ -798,7 +798,7 @@
         playCasioBeep(2048, 0.15);
         applyColorForHour(h);
         updateWeatherData().then(() => {
-          triggerHourlyWallpaper(); // Activa la imagen de fondo durante 1 minuto
+          triggerHourlyWallpaper();
         });
         lastHour = h;
       }
