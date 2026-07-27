@@ -32,14 +32,14 @@
     overflow: hidden;
   }
   
-  /* Contenedor principal del reloj, fecha y clima */
+  /* Contenedor principal del reloj, fecha y clima con protección Anti-Burn-In */
   #clockContainer {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     opacity: var(--clock-brightness);
-    transition: opacity 0.3s ease;
+    transition: opacity 0.3s ease, transform 1s ease;
     cursor: pointer;
     user-select: none;
     position: relative;
@@ -128,7 +128,7 @@
     box-shadow: 0 4px 20px rgba(0,0,0,0.8);
   }
   label { font-size: 0.85rem; color:#ddd; display: flex; flex-direction: column; gap: 4px; }
-  select, input[type="color"], input[type="time"], input[type="text"], button {
+  select, input[type="color"], input[type="time"], input[type="text"], input[type="number"], button {
     padding:.4rem .6rem; border:1px solid #444; border-radius:4px; background:#111; color:#fff;
     font-family: inherit;
   }
@@ -138,15 +138,14 @@
   }
   button:hover { background:#333; }
   
-  .weather-input-group {
+  .weather-input-group, .timer-input-group {
     display: flex;
     gap: 4px;
   }
-  .weather-input-group input {
-    width: 110px;
-  }
+  .weather-input-group input { width: 110px; }
+  .timer-input-group input { width: 60px; }
 
-  /* Botón de detener alarma */
+  /* Botón de detener alarma/timer */
   #stopAlarmBtn {
     background: #ff3333;
     color: white;
@@ -268,6 +267,27 @@
 <button id="settingsToggle" class="icon-btn" title="Ajustes">⚙️</button>
 
 <div class="controls" id="controls" aria-live="polite">
+  <label>Modo de Pantalla:
+    <select id="screenMode">
+      <option value="clock" selected>Reloj</option>
+      <option value="stopwatch">Cronómetro</option>
+      <option value="timer">Temporizador</option>
+    </select>
+  </label>
+
+  <div id="timerControls" style="display: none; gap: 8px; align-items: flex-end;">
+    <label>Minutos:
+      <input type="number" id="timerMinutes" min="0" max="180" value="5" />
+    </label>
+    <button id="startTimerBtn">▶️ Iniciar</button>
+    <button id="resetTimerBtn">🔄 Reiniciar</button>
+  </div>
+
+  <div id="stopwatchControls" style="display: none; gap: 8px; align-items: flex-end;">
+    <button id="startStopwatchBtn">▶️ Iniciar</button>
+    <button id="resetStopwatchBtn">🔄 Reiniciar</button>
+  </div>
+
   <label>Formato:
     <select id="format">
       <option value="24">24h</option>
@@ -279,6 +299,12 @@
       <option value="1">Alto (100%)</option>
       <option value="0.6">Medio (60%)</option>
       <option value="0.3">Bajo (30%)</option>
+    </select>
+  </label>
+  <label>Modo Noche (23h-07h):
+    <select id="nightModeAuto">
+      <option value="off">Desactivado</option>
+      <option value="on">Activado (Brillo bajo/Rojo)</option>
     </select>
   </label>
   <label>Escala:
@@ -329,15 +355,14 @@
   <div class="modal-content">
     <h2>Reloj Minimalista por LPaz</h2>
     <ul>
-      <li><strong>Transmisión a Smart TV (📺):</strong> Permite transmitir directamente desde tu PC o te guía paso a paso para hacerlo desde Android e iPhone.</li>
-      <li><strong>Cambio de Color Automático:</strong> Opción para cambiar el color del reloj automáticamente cada hora.</li>
-      <li><strong>Fácil de Compartir (🔗):</strong> Permite enviar o copiar el enlace directo desde PC o móvil.</li>
-      <li><strong>Clima Día/Noche:</strong> Temperatura e íconos en tiempo real (Sol/Luna).</li>
-      <li><strong>Sin Instalación:</strong> Funciona directamente en tu navegador.</li>
-      <li><strong>Multiplataforma:</strong> Compatible con PC, Android e iPhone.</li>
-      <li><strong>Ajustes Rápidos:</strong> Presiona ⚙️ o toca la pantalla.</li>
-      <li><strong>Modo Pantalla Encendida:</strong> Mantiene la pantalla activa (<em>Wake Lock</em>).</li>
-      <li><strong>Guardado Automático:</strong> Conserva todas tus configuraciones.</li>
+      <li><strong>⏱️ Cronómetro y Temporizador:</strong> Alterna entre los modos de Reloj, Cronómetro y Temporizador desde el menú de ajustes.</li>
+      <li><strong>🌙 Modo Noche Automático:</strong> Atenúa la pantalla y cambia el color a un tono tenue entre las 23:00 y las 07:00 hs.</li>
+      <li><strong>🛡️ Protección Anti Burn-In:</strong> Movimiento imperceptible de píxeles cada 10 min para proteger pantallas OLED/AMOLED y TVs.</li>
+      <li><strong>📺 Transmisión a Smart TV:</strong> Transmite desde tu PC o consulta la guía para Android e iPhone.</li>
+      <li><strong>🎨 Cambio de Color Automático:</strong> Opción para variar de color cada hora.</li>
+      <li><strong>🔗 Fácil de Compartir:</strong> Copia o envía el enlace directo.</li>
+      <li><strong>🌤️ Clima Día/Noche:</strong> Temperatura e íconos en tiempo real.</li>
+      <li><strong>📱 Multiplataforma & Sin Instalación:</strong> Ejecútalo desde cualquier navegador.</li>
     </ul>
 
     <div class="contact-section">
@@ -369,8 +394,18 @@
   const infoModal = document.getElementById('infoModal');
   const closeInfoBtn = document.getElementById('closeInfoBtn');
   
+  const screenModeSel = document.getElementById('screenMode');
+  const timerControls = document.getElementById('timerControls');
+  const stopwatchControls = document.getElementById('stopwatchControls');
+  const timerMinutesInput = document.getElementById('timerMinutes');
+  const startTimerBtn = document.getElementById('startTimerBtn');
+  const resetTimerBtn = document.getElementById('resetTimerBtn');
+  const startStopwatchBtn = document.getElementById('startStopwatchBtn');
+  const resetStopwatchBtn = document.getElementById('resetStopwatchBtn');
+
   const formatSel = document.getElementById('format');
   const brightnessSel = document.getElementById('brightness');
+  const nightModeAutoSel = document.getElementById('nightModeAuto');
   const sizeSel = document.getElementById('size');
   const fontSel = document.getElementById('font');
   const colorModeSel = document.getElementById('colorMode');
@@ -385,7 +420,7 @@
   const fullscreenBtn = document.getElementById('fullscreenBtn');
   const toast = document.getElementById('toast');
 
-  // Estado
+  // Estado del Reloj y Funciones
   let alarmTime = null;
   let alarmActive = false;
   let isRinging = false;
@@ -397,6 +432,12 @@
   let audioCtx = null;
   let currentCityData = null;
 
+  // Estado Cronómetro y Temporizador
+  let stopwatchTime = 0;
+  let stopwatchInterval = null;
+  let timerTime = 0;
+  let timerInterval = null;
+
   // Paleta de colores para cambio automático
   const hourlyColors = [
     "#00ff00", "#00ffff", "#ff00ff", "#ffff00", "#ff8800", "#0088ff",
@@ -405,7 +446,14 @@
     "#ff3d00", "#00b0ff", "#f4ff81", "#e040fb", "#64ffda", "#ff6e40"
   ];
 
-  // Transmisión a Smart TV adaptable para PC y Celulares
+  // Protección Anti Burn-In para OLED/TVs (Desplazamiento imperceptible cada 10 min)
+  setInterval(() => {
+    const shiftX = (Math.random() - 0.5) * 8; // Max 4px
+    const shiftY = (Math.random() - 0.5) * 8;
+    clockContainer.style.transform = `translate(${shiftX}px, ${shiftY}px)`;
+  }, 600000);
+
+  // Transmisión a Smart TV
   async function castToSmartTV() {
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -595,6 +643,7 @@
       brightnessSel.value = prefs.brightness;
       document.documentElement.style.setProperty('--clock-brightness', prefs.brightness);
     }
+    if(prefs.nightModeAuto) nightModeAutoSel.value = prefs.nightModeAuto;
     if(prefs.size) {
       sizeSel.value = prefs.size;
       applySize();
@@ -632,6 +681,7 @@
     const prefs = {
       format: formatSel.value,
       brightness: brightnessSel.value,
+      nightModeAuto: nightModeAutoSel.value,
       size: sizeSel.value,
       font: fontSel.value,
       colorMode: colorModeSel.value,
@@ -645,29 +695,65 @@
 
   function two(n){ return String(n).padStart(2,'0'); }
 
+  // Actualizador Principal (Reloj / Cronómetro / Temporizador / Modo Noche)
   function updateClock(){
     const now = new Date();
     let h = now.getHours();
     const m = now.getMinutes();
     const s = now.getSeconds();
-    let suffix = '';
 
-    if (h !== lastHour && m === 0 && s <= 1) {
-      playCasioBeep(2048, 0.15);
-      applyColorForHour(h);
-      updateWeatherData();
-      lastHour = h;
+    // Modo Noche Automático (23:00 - 07:00 hs)
+    if (nightModeAutoSel.value === 'on') {
+      if (h >= 23 || h < 7) {
+        document.documentElement.style.setProperty('--clock-brightness', '0.3');
+        document.body.style.color = '#ff3333';
+      } else {
+        document.documentElement.style.setProperty('--clock-brightness', brightnessSel.value);
+        if (colorModeSel.value === 'auto') {
+          applyColorForHour(h);
+        } else {
+          document.body.style.color = colorSel.value;
+        }
+      }
     }
 
-    if (formatSel.value === '12') {
-      suffix = h >= 12 ? ' PM' : ' AM';
-      h = h % 12 || 12;
+    if (screenModeSel.value === 'clock') {
+      let suffix = '';
+      if (h !== lastHour && m === 0 && s <= 1) {
+        playCasioBeep(2048, 0.15);
+        applyColorForHour(h);
+        updateWeatherData();
+        lastHour = h;
+      }
+
+      if (formatSel.value === '12') {
+        suffix = h >= 12 ? ' PM' : ' AM';
+        h = h % 12 || 12;
+      }
+      clock.textContent = `${two(h)}:${two(m)}:${two(s)}${suffix}`;
+
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      date.textContent = now.toLocaleDateString('es-ES', options);
+      if (currentCityData) weatherDiv.style.display = 'block';
+    } 
+    else if (screenModeSel.value === 'stopwatch') {
+      const swH = Math.floor(stopwatchTime / 3600);
+      const swM = Math.floor((stopwatchTime % 3600) / 60);
+      const swS = stopwatchTime % 60;
+      clock.textContent = `${two(swH)}:${two(swM)}:${two(swS)}`;
+      date.textContent = "CRONÓMETRO";
+      weatherDiv.style.display = 'none';
+    } 
+    else if (screenModeSel.value === 'timer') {
+      const tmH = Math.floor(timerTime / 3600);
+      const tmM = Math.floor((timerTime % 3600) / 60);
+      const tmS = timerTime % 60;
+      clock.textContent = `${two(tmH)}:${two(tmM)}:${two(tmS)}`;
+      date.textContent = "TEMPORIZADOR";
+      weatherDiv.style.display = 'none';
     }
-    clock.textContent = `${two(h)}:${two(m)}:${two(s)}${suffix}`;
 
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    date.textContent = now.toLocaleDateString('es-ES', options);
-
+    // Verificación de Alarma
     if (alarmActive && alarmTime && !isRinging) {
       const currentHM = `${two(now.getHours())}:${two(now.getMinutes())}`;
       if (currentHM === alarmTime) {
@@ -675,6 +761,68 @@
       }
     }
   }
+
+  // Lógica de Cronómetro y Temporizador
+  screenModeSel.addEventListener('change', () => {
+    timerControls.style.display = screenModeSel.value === 'timer' ? 'flex' : 'none';
+    stopwatchControls.style.display = screenModeSel.value === 'stopwatch' ? 'flex' : 'none';
+    updateClock();
+  });
+
+  startStopwatchBtn.addEventListener('click', () => {
+    if (stopwatchInterval) {
+      clearInterval(stopwatchInterval);
+      stopwatchInterval = null;
+      startStopwatchBtn.textContent = '▶️ Iniciar';
+    } else {
+      stopwatchInterval = setInterval(() => {
+        stopwatchTime++;
+        updateClock();
+      }, 1000);
+      startStopwatchBtn.textContent = '⏸️ Pausar';
+    }
+  });
+
+  resetStopwatchBtn.addEventListener('click', () => {
+    clearInterval(stopwatchInterval);
+    stopwatchInterval = null;
+    stopwatchTime = 0;
+    startStopwatchBtn.textContent = '▶️ Iniciar';
+    updateClock();
+  });
+
+  startTimerBtn.addEventListener('click', () => {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      startTimerBtn.textContent = '▶️ Iniciar';
+    } else {
+      if (timerTime <= 0) {
+        timerTime = (parseInt(timerMinutesInput.value, 10) || 5) * 60;
+      }
+      timerInterval = setInterval(() => {
+        if (timerTime > 0) {
+          timerTime--;
+          updateClock();
+        } else {
+          clearInterval(timerInterval);
+          timerInterval = null;
+          startTimerBtn.textContent = '▶️ Iniciar';
+          triggerAlarm();
+          showToast('⏳ ¡Tiempo finalizado!');
+        }
+      }, 1000);
+      startTimerBtn.textContent = '⏸️ Pausar';
+    }
+  });
+
+  resetTimerBtn.addEventListener('click', () => {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    timerTime = (parseInt(timerMinutesInput.value, 10) || 5) * 60;
+    startTimerBtn.textContent = '▶️ Iniciar';
+    updateClock();
+  });
 
   function updateAlarmUI() {
     if (alarmActive && alarmTime) {
@@ -687,7 +835,6 @@
 
   function triggerAlarm() {
     isRinging = true;
-    
     playCasioDoubleBeep();
     alarmInterval = setInterval(playCasioDoubleBeep, 1000);
     
@@ -806,6 +953,7 @@
     savePrefs();
   });
 
+  nightModeAutoSel.addEventListener('change', savePrefs);
   sizeSel.addEventListener('change', ()=>{ applySize(); savePrefs(); });
   fontSel.addEventListener('change', ()=>{ document.body.style.fontFamily = fontSel.value; savePrefs(); });
   
