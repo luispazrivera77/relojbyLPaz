@@ -296,7 +296,7 @@
   <div id="alarmIndicator" title="Alarma activa">⏰ <span id="alarmIndicatorTime">--:--</span></div>
 </div>
 
-<div id="visitCounter" title="Contador de Visitas">👁️ Visitas: ...</div>
+<div id="visitCounter" title="Contador de Visitas">👁️ Visitas: cargando...</div>
 
 <button id="stopAlarmBtn">🔕 Detener Alarma</button>
 
@@ -407,16 +407,13 @@
   <div class="modal-content">
     <h2>Reloj Minimalista por LPaz</h2>
     <ul>
-      <li><strong>👁️ Contador de Visitas:</strong> Registra las visitas únicas/totales en tiempo real. Puede ocultarse desde el menú de ajustes.</li>
-      <li><strong>🖼️ Wallpaper de Clima (1 min):</strong> Al cambiar cada hora, aparece durante 1 minuto un fondo visual acorde al clima actual.</li>
-      <li><strong>⏱️ Cronómetro y Temporizador:</strong> Alterna entre los modos de Reloj, Cronómetro y Temporizador desde el menú de ajustes.</li>
-      <li><strong>🌙 Modo Noche Automático:</strong> Atenúa la pantalla y cambia el color a un tono tenue entre las 23:00 y las 07:00 hs.</li>
-      <li><strong>🛡️ Protección Anti Burn-In:</strong> Movimiento imperceptible de píxeles cada 10 min para proteger pantallas OLED/AMOLED y TVs.</li>
-      <li><strong>📺 Transmisión a Smart TV:</strong> Transmite desde tu PC o consulta la guía para Android e iPhone.</li>
+      <li><strong>👁️ Contador Global de Visitas:</strong> Muestra en tiempo real la cantidad acumulada de accesos de todos los usuarios del mundo.</li>
+      <li><strong>🖼️ Wallpaper de Clima (1 min):</strong> Fondo con imágenes HD acorde al tiempo actual al cambiar de hora.</li>
+      <li><strong>⏱️ Cronómetro y Temporizador:</strong> Funciones de tiempo integradas en el menú de ajustes.</li>
+      <li><strong>🌙 Modo Noche Automático:</strong> Atenúa la pantalla y atenúa el tono entre las 23:00 y las 07:00 hs.</li>
+      <li><strong>🛡️ Protección Anti Burn-In:</strong> Movimiento imperceptible de píxeles cada 10 min para proteger televisores y pantallas OLED.</li>
+      <li><strong>📺 Transmisión a Smart TV:</strong> Envía la vista del reloj a tu pantalla inteligente.</li>
       <li><strong>🎨 Cambio de Color Automático:</strong> Opción para variar de color cada hora.</li>
-      <li><strong>🔗 Fácil de Compartir:</strong> Copia o envía el enlace directo.</li>
-      <li><strong>🌤️ Clima Día/Noche:</strong> Temperatura e íconos en tiempo real.</li>
-      <li><strong>📱 Multiplataforma & Sin Instalación:</strong> Ejecútalo desde cualquier navegador.</li>
     </ul>
 
     <div class="contact-section">
@@ -498,23 +495,36 @@
   let timerTime = 0;
   let timerInterval = null;
 
-  // Lógica del Contador de Visitas con API Global (CountAPI)
+  // Lógica del Contador Global de Visitas (CounterAPI v2)
   async function initVisitCounter() {
     try {
-      const namespace = "reloj-minimalista-lpaz";
-      const key = "visitas";
-      const res = await fetch(`https://api.countapi.xyz/hit/${namespace}/${key}`);
+      // Clave única global para tu aplicación
+      const siteKey = "lpaz-reloj-minimalista-2026";
+      const res = await fetch(`https://api.counterapi.dev/v1/reloj_lpaz/${siteKey}/up`);
       const data = await res.json();
-      if (data && data.value) {
-        visitCounter.textContent = `👁️ Visitas: ${data.value.toLocaleString('es-ES')}`;
+      
+      if (data && data.count !== undefined) {
+        visitCounter.textContent = `👁️ Visitas: ${data.count.toLocaleString('es-ES')}`;
       } else {
-        visitCounter.textContent = `👁️ Visitas: 1`;
+        fetchReadCounter();
       }
     } catch (err) {
-      // Contador alternativo local si el servicio externo no responde
-      let localVisits = parseInt(localStorage.getItem('clock_local_visits') || '0', 10) + 1;
-      localStorage.setItem('clock_local_visits', localVisits);
-      visitCounter.textContent = `👁️ Visitas: ${localVisits.toLocaleString('es-ES')}`;
+      fetchReadCounter();
+    }
+  }
+
+  async function fetchReadCounter() {
+    try {
+      const siteKey = "lpaz-reloj-minimalista-2026";
+      const res = await fetch(`https://api.counterapi.dev/v1/reloj_lpaz/${siteKey}`);
+      const data = await res.json();
+      if (data && data.count !== undefined) {
+        visitCounter.textContent = `👁️ Visitas: ${data.count.toLocaleString('es-ES')}`;
+      } else {
+        visitCounter.textContent = `👁️ Visitas: --`;
+      }
+    } catch (e) {
+      visitCounter.textContent = `👁️ Visitas: --`;
     }
   }
 
