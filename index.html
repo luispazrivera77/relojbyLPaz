@@ -30,9 +30,33 @@
     color: var(--accent-color);
     transition: background 0.3s, color 0.5s ease;
     overflow: hidden;
+    position: relative;
+  }
+
+  /* Capa de Wallpaper para el cambio de hora */
+  #wallpaperOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* Capa oscura para mantener la legibilidad de los números */
+  #wallpaperOverlay::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.55);
   }
   
-  /* Contenedor principal del reloj, fecha y clima con protección Anti-Burn-In */
+  /* Contenedor principal del reloj, fecha y clima */
   #clockContainer {
     display: flex;
     flex-direction: column;
@@ -45,6 +69,7 @@
     position: relative;
     width: 100%;
     padding: 0 10px;
+    z-index: 2;
   }
 
   /* Escalado dinámico responsivo */
@@ -138,12 +163,11 @@
   }
   button:hover { background:#333; }
   
-  .weather-input-group, .timer-input-group {
+  .weather-input-group {
     display: flex;
     gap: 4px;
   }
   .weather-input-group input { width: 110px; }
-  .timer-input-group input { width: 60px; }
 
   /* Botón de detener alarma/timer */
   #stopAlarmBtn {
@@ -251,6 +275,8 @@
 </head>
 <body>
 
+<div id="wallpaperOverlay"></div>
+
 <div id="clockContainer" tabindex="0" aria-label="Reloj">
   <div id="clock"></div>
   <div id="date"></div>
@@ -288,6 +314,12 @@
     <button id="resetStopwatchBtn">🔄 Reiniciar</button>
   </div>
 
+  <label>Wallpaper Cambio Hora:
+    <select id="wallpaperToggle">
+      <option value="on" selected>Activado (1 min)</option>
+      <option value="off">Desactivado</option>
+    </select>
+  </label>
   <label>Formato:
     <select id="format">
       <option value="24">24h</option>
@@ -350,11 +382,12 @@
   <button id="fullscreenBtn">⛶ Pantalla completa</button>
 </div>
 
-<!-- Modal de Información e Instrucciones -->
+<!-- Modal de Información -->
 <div id="infoModal" class="modal-overlay">
   <div class="modal-content">
     <h2>Reloj Minimalista por LPaz</h2>
     <ul>
+      <li><strong>🖼️ Wallpaper de Clima (1 min):</strong> Al cambiar cada hora, aparece durante 1 minuto un fondo visual acorde al clima actual.</li>
       <li><strong>⏱️ Cronómetro y Temporizador:</strong> Alterna entre los modos de Reloj, Cronómetro y Temporizador desde el menú de ajustes.</li>
       <li><strong>🌙 Modo Noche Automático:</strong> Atenúa la pantalla y cambia el color a un tono tenue entre las 23:00 y las 07:00 hs.</li>
       <li><strong>🛡️ Protección Anti Burn-In:</strong> Movimiento imperceptible de píxeles cada 10 min para proteger pantallas OLED/AMOLED y TVs.</li>
@@ -380,6 +413,7 @@
 
 <script>
   // Elementos UI
+  const wallpaperOverlay = document.getElementById('wallpaperOverlay');
   const clockContainer = document.getElementById('clockContainer');
   const clock = document.getElementById('clock');
   const date = document.getElementById('date');
@@ -403,6 +437,7 @@
   const startStopwatchBtn = document.getElementById('startStopwatchBtn');
   const resetStopwatchBtn = document.getElementById('resetStopwatchBtn');
 
+  const wallpaperToggleSel = document.getElementById('wallpaperToggle');
   const formatSel = document.getElementById('format');
   const brightnessSel = document.getElementById('brightness');
   const nightModeAutoSel = document.getElementById('nightModeAuto');
@@ -431,12 +466,48 @@
   let alarmInterval = null;
   let audioCtx = null;
   let currentCityData = null;
+  let currentWeatherCode = 0;
+  let isCurrentDay = true;
 
   // Estado Cronómetro y Temporizador
   let stopwatchTime = 0;
   let stopwatchInterval = null;
   let timerTime = 0;
   let timerInterval = null;
+
+  // Colección de Wallpapers estilizados por clima (Unsplash HD)
+  const weatherWallpapers = {
+    clearDay: "https://images.unsplash.com/photo-1601297183305-6df142704ea2?auto=format&fit=crop&w=1920&q=80",
+    clearNight: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1920&q=80",
+    clouds: "https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=1920&q=80",
+    rain: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=1920&q=80",
+    snow: "https://images.unsplash.com/photo-1491002052546-bf38f186af56?auto=format&fit=crop&w=1920&q=80",
+    thunder: "https://images.unsplash.com/photo-1605727216801-e27ce1d0cc28?auto=format&fit=crop&w=1920&q=80",
+    default: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80"
+  };
+
+  function getWallpaperForWeather(code, isDay) {
+    if (code === 0) return isDay ? weatherWallpapers.clearDay : weatherWallpapers.clearNight;
+    if (code >= 1 && code <= 3) return weatherWallpapers.clouds;
+    if (code >= 45 && code <= 67) return weatherWallpapers.rain;
+    if (code >= 71 && code <= 77) return weatherWallpapers.snow;
+    if (code >= 80 && code <= 82) return weatherWallpapers.rain;
+    if (code >= 95) return weatherWallpapers.thunder;
+    return isDay ? weatherWallpapers.clearDay : weatherWallpapers.clearNight;
+  }
+
+  function triggerHourlyWallpaper() {
+    if (wallpaperToggleSel.value !== 'on') return;
+
+    const imageUrl = getWallpaperForWeather(currentWeatherCode, isCurrentDay);
+    wallpaperOverlay.style.backgroundImage = `url('${imageUrl}')`;
+    wallpaperOverlay.style.opacity = '1';
+
+    // Ocultar la imagen automáticamente tras 1 minuto
+    setTimeout(() => {
+      wallpaperOverlay.style.opacity = '0';
+    }, 60000);
+  }
 
   // Paleta de colores para cambio automático
   const hourlyColors = [
@@ -448,7 +519,7 @@
 
   // Protección Anti Burn-In para OLED/TVs (Desplazamiento imperceptible cada 10 min)
   setInterval(() => {
-    const shiftX = (Math.random() - 0.5) * 8; // Max 4px
+    const shiftX = (Math.random() - 0.5) * 8;
     const shiftY = (Math.random() - 0.5) * 8;
     clockContainer.style.transform = `translate(${shiftX}px, ${shiftY}px)`;
   }, 600000);
@@ -558,13 +629,13 @@
 
       if (weatherData.current_weather) {
         const temp = Math.round(weatherData.current_weather.temperature);
-        const code = weatherData.current_weather.weathercode;
+        currentWeatherCode = weatherData.current_weather.weathercode;
         
-        const isDay = weatherData.current_weather.is_day !== undefined 
+        isCurrentDay = weatherData.current_weather.is_day !== undefined 
           ? Boolean(weatherData.current_weather.is_day) 
           : (new Date().getHours() >= 6 && new Date().getHours() < 20);
 
-        const icon = getWeatherIcon(code, isDay);
+        const icon = getWeatherIcon(currentWeatherCode, isCurrentDay);
 
         weatherDiv.textContent = `${icon} ${currentCityData.name} ${temp}°C`;
         weatherDiv.style.display = 'block';
@@ -638,6 +709,7 @@
     const saved = localStorage.getItem('clock_prefs');
     if(!saved) return;
     const prefs = JSON.parse(saved);
+    if(prefs.wallpaperToggle) wallpaperToggleSel.value = prefs.wallpaperToggle;
     if(prefs.format) formatSel.value = prefs.format;
     if(prefs.brightness) {
       brightnessSel.value = prefs.brightness;
@@ -679,6 +751,7 @@
 
   function savePrefs(){
     const prefs = {
+      wallpaperToggle: wallpaperToggleSel.value,
       format: formatSel.value,
       brightness: brightnessSel.value,
       nightModeAuto: nightModeAutoSel.value,
@@ -695,7 +768,7 @@
 
   function two(n){ return String(n).padStart(2,'0'); }
 
-  // Actualizador Principal (Reloj / Cronómetro / Temporizador / Modo Noche)
+  // Actualizador Principal
   function updateClock(){
     const now = new Date();
     let h = now.getHours();
@@ -719,10 +792,14 @@
 
     if (screenModeSel.value === 'clock') {
       let suffix = '';
+      
+      // Cambio de hora exacto (00:00:00)
       if (h !== lastHour && m === 0 && s <= 1) {
         playCasioBeep(2048, 0.15);
         applyColorForHour(h);
-        updateWeatherData();
+        updateWeatherData().then(() => {
+          triggerHourlyWallpaper(); // Activa la imagen de fondo durante 1 minuto
+        });
         lastHour = h;
       }
 
@@ -946,6 +1023,7 @@
     }
   });
 
+  wallpaperToggleSel.addEventListener('change', savePrefs);
   formatSel.addEventListener('change', ()=>{ updateClock(); savePrefs(); });
   
   brightnessSel.addEventListener('change', ()=>{
