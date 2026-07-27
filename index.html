@@ -114,6 +114,22 @@
     border: 1px solid rgba(255, 255, 255, 0.15);
   }
 
+  /* Sugerencia de clima al cambio de hora */
+  #weatherSuggestion {
+    position: absolute;
+    bottom: 15%;
+    font-size: calc(clamp(1rem, 2.5vw, 1.6rem) * var(--size-factor));
+    text-align: center;
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+    pointer-events: none;
+    max-width: 85%;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+    z-index: 5;
+    color: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
   /* Contador de Visitas Minimalista */
   #visitCounter {
     position: absolute;
@@ -163,6 +179,8 @@
     max-width: 90%;
     z-index: 9;
     box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    max-height: 70vh;
+    overflow-y: auto;
   }
   label { font-size: 0.85rem; color:#ddd; display: flex; flex-direction: column; gap: 4px; }
   select, input[type="color"], input[type="time"], input[type="text"], input[type="number"], button {
@@ -296,6 +314,9 @@
   <div id="alarmIndicator" title="Alarma activa">⏰ <span id="alarmIndicatorTime">--:--</span></div>
 </div>
 
+<!-- Texto de sugerencia de clima flotante -->
+<div id="weatherSuggestion"></div>
+
 <div id="visitCounter" title="Contador de Visitas">👁️ Visitas: cargando...</div>
 
 <button id="stopAlarmBtn">🔕 Detener Alarma</button>
@@ -332,6 +353,12 @@
     <select id="counterToggle">
       <option value="on" selected>Visible</option>
       <option value="off">Oculto</option>
+    </select>
+  </label>
+  <label>Sugerencia de Clima (1 min):
+    <select id="suggestionToggle">
+      <option value="on" selected>Activado</option>
+      <option value="off">Desactivado</option>
     </select>
   </label>
   <label>Wallpaper Cambio Hora:
@@ -407,13 +434,13 @@
   <div class="modal-content">
     <h2>Reloj Minimalista por LPaz</h2>
     <ul>
-      <li><strong>👁️ Contador Global de Visitas:</strong> Muestra en tiempo real la cantidad acumulada de accesos de todos los usuarios del mundo.</li>
+      <li><strong>💬 Sugerencia de Clima (1 min):</strong> Al cambiar la hora, el reloj te dará recomendaciones prácticas según cómo esté el tiempo afuera (Ej. usar bloqueador, llevar paraguas).</li>
+      <li><strong>👁️ Contador Global de Visitas:</strong> Muestra en tiempo real la cantidad acumulada de accesos.</li>
       <li><strong>🖼️ Wallpaper de Clima (1 min):</strong> Fondo con imágenes HD acorde al tiempo actual al cambiar de hora.</li>
       <li><strong>⏱️ Cronómetro y Temporizador:</strong> Funciones de tiempo integradas en el menú de ajustes.</li>
       <li><strong>🌙 Modo Noche Automático:</strong> Atenúa la pantalla y atenúa el tono entre las 23:00 y las 07:00 hs.</li>
-      <li><strong>🛡️ Protección Anti Burn-In:</strong> Movimiento imperceptible de píxeles cada 10 min para proteger televisores y pantallas OLED.</li>
+      <li><strong>🛡️ Protección Anti Burn-In:</strong> Movimiento imperceptible de píxeles cada 10 min para proteger pantallas OLED.</li>
       <li><strong>📺 Transmisión a Smart TV:</strong> Envía la vista del reloj a tu pantalla inteligente.</li>
-      <li><strong>🎨 Cambio de Color Automático:</strong> Opción para variar de color cada hora.</li>
     </ul>
 
     <div class="contact-section">
@@ -438,6 +465,7 @@
   const weatherDiv = document.getElementById('weather');
   const alarmIndicator = document.getElementById('alarmIndicator');
   const alarmIndicatorTime = document.getElementById('alarmIndicatorTime');
+  const weatherSuggestion = document.getElementById('weatherSuggestion');
   const visitCounter = document.getElementById('visitCounter');
   const controls = document.getElementById('controls');
   const settingsToggle = document.getElementById('settingsToggle');
@@ -458,6 +486,7 @@
 
   const counterToggleSel = document.getElementById('counterToggle');
   const wallpaperToggleSel = document.getElementById('wallpaperToggle');
+  const suggestionToggleSel = document.getElementById('suggestionToggle');
   const formatSel = document.getElementById('format');
   const brightnessSel = document.getElementById('brightness');
   const nightModeAutoSel = document.getElementById('nightModeAuto');
@@ -498,7 +527,6 @@
   // Lógica del Contador Global de Visitas (CounterAPI v2)
   async function initVisitCounter() {
     try {
-      // Clave única global para tu aplicación
       const siteKey = "lpaz-reloj-minimalista-2026";
       const res = await fetch(`https://api.counterapi.dev/v1/reloj_lpaz/${siteKey}/up`);
       const data = await res.json();
@@ -549,15 +577,48 @@
     return isDay ? weatherWallpapers.clearDay : weatherWallpapers.clearNight;
   }
 
-  function triggerHourlyWallpaper() {
-    if (wallpaperToggleSel.value !== 'on') return;
+  // Generador de frases según clima
+  function getWeatherSuggestion(code, isDay) {
+    if (code === 0) return isDay 
+      ? "¡Día espectacular! 😎 Recuerda usar gafas y llevar tu bloqueador solar factor 30." 
+      : "Noche despejada, ideal para salir a observar las estrellas. 🌌";
+    
+    if (code >= 1 && code <= 3) return isDay 
+      ? "El clima está agradable, perfecto para un pequeño paseo. 🚶‍♂️☁️" 
+      : "Noche tranquila y parcialmente nublada. Perfecto para descansar. 🌙☁️";
+      
+    if (code >= 45 && code <= 48) return "Hay niebla en el ambiente. Conduce con precaución y mantente alerta. 🌫️🚗";
+    
+    if (code >= 51 && code <= 67) return "Está lloviendo. ¡No olvides llevar tu paraguas o un buen impermeable! ☔🌧️";
+    
+    if (code >= 71 && code <= 77) return "¡Está nevando! ❄️ Abrígate muy bien y prepara un buen chocolate caliente. ☕";
+    
+    if (code >= 80 && code <= 82) return "Posibles chubascos a la vista. 🌂 Mejor lleva un paraguas por si acaso.";
+    
+    if (code >= 95) return "Tormenta eléctrica en curso. ⛈️ Lo mejor es quedarte resguardado en un lugar seguro. 🏠";
+    
+    return "Disfruta de esta nueva hora. ¡Mantente hidratado! 💧";
+  }
 
-    const imageUrl = getWallpaperForWeather(currentWeatherCode, isCurrentDay);
-    wallpaperOverlay.style.backgroundImage = `url('${imageUrl}')`;
-    wallpaperOverlay.style.opacity = '1';
+  // Activador de Eventos de Cambio de Hora (Fondo + Texto)
+  function triggerHourlyEvents() {
+    // Activar el wallpaper si la opción está encendida
+    if (wallpaperToggleSel.value === 'on') {
+      const imageUrl = getWallpaperForWeather(currentWeatherCode, isCurrentDay);
+      wallpaperOverlay.style.backgroundImage = `url('${imageUrl}')`;
+      wallpaperOverlay.style.opacity = '1';
+    }
 
+    // Mostrar el texto de sugerencia si la opción está encendida y hay datos de clima
+    if (suggestionToggleSel.value === 'on' && currentCityData) {
+      weatherSuggestion.textContent = getWeatherSuggestion(currentWeatherCode, isCurrentDay);
+      weatherSuggestion.style.opacity = '1';
+    }
+
+    // Desvanecer ambos después de 1 minuto
     setTimeout(() => {
       wallpaperOverlay.style.opacity = '0';
+      weatherSuggestion.style.opacity = '0';
     }, 60000);
   }
 
@@ -766,6 +827,8 @@
       visitCounter.style.display = prefs.counterToggle === 'on' ? 'block' : 'none';
     }
     if(prefs.wallpaperToggle) wallpaperToggleSel.value = prefs.wallpaperToggle;
+    if(prefs.suggestionToggle) suggestionToggleSel.value = prefs.suggestionToggle;
+    
     if(prefs.format) formatSel.value = prefs.format;
     if(prefs.brightness) {
       brightnessSel.value = prefs.brightness;
@@ -809,6 +872,7 @@
     const prefs = {
       counterToggle: counterToggleSel.value,
       wallpaperToggle: wallpaperToggleSel.value,
+      suggestionToggle: suggestionToggleSel.value,
       format: formatSel.value,
       brightness: brightnessSel.value,
       nightModeAuto: nightModeAutoSel.value,
@@ -855,7 +919,7 @@
         playCasioBeep(2048, 0.15);
         applyColorForHour(h);
         updateWeatherData().then(() => {
-          triggerHourlyWallpaper();
+          triggerHourlyEvents(); // Activa fondo y sugerencia de clima
         });
         lastHour = h;
       }
@@ -1086,6 +1150,7 @@
   });
 
   wallpaperToggleSel.addEventListener('change', savePrefs);
+  suggestionToggleSel.addEventListener('change', savePrefs);
   formatSel.addEventListener('change', ()=>{ updateClock(); savePrefs(); });
   
   brightnessSel.addEventListener('change', ()=>{
