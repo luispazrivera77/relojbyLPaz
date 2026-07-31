@@ -515,7 +515,7 @@
   let alarmInterval = null;
   let audioCtx = null;
   let currentCityData = null;
-  let currentWeatherCode = 0;
+  let currentWeatherCode = null;
   let isCurrentDay = true;
 
   // Estado Cronómetro y Temporizador
@@ -577,45 +577,63 @@
     return isDay ? weatherWallpapers.clearDay : weatherWallpapers.clearNight;
   }
 
-  // Generador de frases según clima
+  // Generador de frases según mapa de códigos WMO exactos de Open-Meteo
   function getWeatherSuggestion(code, isDay) {
-    if (code === 0) return isDay 
-      ? "¡Día espectacular! 😎 Recuerda usar gafas y llevar tu bloqueador solar factor 30." 
-      : "Noche despejada, ideal para salir a observar las estrellas. 🌌";
+    if (code === null || code === undefined) {
+      return "¡Bienvenido! Que tengas una excelente hora. 🌟";
+    }
+
+    // 0: Cielo despejado
+    if (code === 0) {
+      return isDay 
+        ? "¡Día soleado y despejado! 😎 Recuerda usar gafas y bloqueador solar factor 30." 
+        : "Noche totalmente despejada, ideal para salir a contemplar las estrellas. 🌌";
+    }
     
-    if (code >= 1 && code <= 3) return isDay 
-      ? "El clima está agradable, perfecto para un pequeño paseo. 🚶‍♂️☁️" 
-      : "Noche tranquila y parcialmente nublada. Perfecto para descansar. 🌙☁️";
+    // 1, 2, 3: Algo nublado / Cubierto
+    if (code >= 1 && code <= 3) {
+      return isDay 
+        ? "El clima está algo nublado pero agradable. ⛅ ¡Buen momento para dar una caminata!" 
+        : "Noche parcialmente nublada y fresca. 🌙☁️ Ideal para descansar.";
+    }
       
-    if (code >= 45 && code <= 48) return "Hay niebla en el ambiente. Conduce con precaución y mantente alerta. 🌫️🚗";
+    // 45, 48: Niebla
+    if (code === 45 || code === 48) {
+      return "Hay niebla en la ciudad. 🌫️ Conduce con mucha precaución y mantén tus luces encendidas.";
+    }
+
+    // 51 a 67: Lloviznas y lluvias
+    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
+      return "Pronóstico de lluvia. ☔ ¡No olvides llevar tu paraguas o un buen impermeable!";
+    }
     
-    if (code >= 51 && code <= 67) return "Está lloviendo. ¡No olvides llevar tu paraguas o un buen impermeable! ☔🌧️";
+    // 71 a 77: Nieve
+    if (code >= 71 && code <= 77) {
+      return "¡Está cayendo nieve! ❄️ Abrígate muy bien y disfruta de una bebida caliente. ☕";
+    }
     
-    if (code >= 71 && code <= 77) return "¡Está nevando! ❄️ Abrígate muy bien y prepara un buen chocolate caliente. ☕";
+    // 95 a 99: Tormentas eléctricas
+    if (code >= 95) {
+      return "Alerta de tormenta eléctrica. ⛈️ Procura mantenerte resguardado en un lugar seguro. 🏠";
+    }
     
-    if (code >= 80 && code <= 82) return "Posibles chubascos a la vista. 🌂 Mejor lleva un paraguas por si acaso.";
-    
-    if (code >= 95) return "Tormenta eléctrica en curso. ⛈️ Lo mejor es quedarte resguardado en un lugar seguro. 🏠";
-    
-    return "Disfruta de esta nueva hora. ¡Mantente hidratado! 💧";
+    return "¡Mantente preparado y disfruta de esta nueva hora! 💧";
   }
 
   // Activador de Eventos de Cambio de Hora (Fondo + Texto)
   function triggerHourlyEvents() {
-    // Activar el wallpaper si la opción está encendida
     if (wallpaperToggleSel.value === 'on') {
       const imageUrl = getWallpaperForWeather(currentWeatherCode, isCurrentDay);
       wallpaperOverlay.style.backgroundImage = `url('${imageUrl}')`;
       wallpaperOverlay.style.opacity = '1';
     }
 
-    // Mostrar el texto de sugerencia si la opción está encendida y hay datos de clima
-    if (suggestionToggleSel.value === 'on' && currentCityData) {
+    if (suggestionToggleSel.value === 'on') {
       weatherSuggestion.textContent = getWeatherSuggestion(currentWeatherCode, isCurrentDay);
       weatherSuggestion.style.opacity = '1';
     }
 
-    // Desvanecer ambos después de 1 minuto
+    // Ocultar suavemente después de 1 minuto (60000ms)
     setTimeout(() => {
       wallpaperOverlay.style.opacity = '0';
       weatherSuggestion.style.opacity = '0';
@@ -701,10 +719,9 @@
   function getWeatherIcon(code, isDay) {
     if (code === 0) return isDay ? '☀️' : '🌙';
     if (code >= 1 && code <= 3) return isDay ? '⛅' : '☁️';
-    if (code >= 45 && code <= 48) return '🌫️';
-    if (code >= 51 && code <= 67) return '🌧️';
+    if (code === 45 || code === 48) return '🌫️';
+    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return '🌧️';
     if (code >= 71 && code <= 77) return '❄️';
-    if (code >= 80 && code <= 82) return '🌦️';
     if (code >= 95) return '⛈️';
     return isDay ? '☀️' : '🌙';
   }
@@ -918,9 +935,16 @@
       if (h !== lastHour && m === 0 && s <= 1) {
         playCasioBeep(2048, 0.15);
         applyColorForHour(h);
-        updateWeatherData().then(() => {
-          triggerHourlyEvents(); // Activa fondo y sugerencia de clima
-        });
+        
+        // Actualizamos primero el clima y lanzamos los eventos asegurando que el dato sea fresco
+        if (currentCityData) {
+          updateWeatherData().then(() => {
+            triggerHourlyEvents();
+          });
+        } else {
+          triggerHourlyEvents();
+        }
+        
         lastHour = h;
       }
 
