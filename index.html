@@ -55,7 +55,7 @@
     top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.55);
   }
-
+  
   /* Contenedor principal del reloj, fecha y clima */
   #clockContainer {
     display: flex;
@@ -192,7 +192,7 @@
     transition: background 0.2s;
   }
   button:hover { background:#333; }
-
+  
   .weather-input-group {
     display: flex;
     gap: 4px;
@@ -474,7 +474,7 @@
   const castToggle = document.getElementById('castToggle');
   const infoModal = document.getElementById('infoModal');
   const closeInfoBtn = document.getElementById('closeInfoBtn');
-
+  
   const screenModeSel = document.getElementById('screenMode');
   const timerControls = document.getElementById('timerControls');
   const stopwatchControls = document.getElementById('stopwatchControls');
@@ -515,7 +515,6 @@
   let alarmInterval = null;
   let audioCtx = null;
   let currentCityData = null;
-  let currentWeatherCode = 0;
   let currentWeatherCode = null;
   let isCurrentDay = true;
 
@@ -531,7 +530,7 @@
       const siteKey = "lpaz-reloj-minimalista-2026";
       const res = await fetch(`https://api.counterapi.dev/v1/reloj_lpaz/${siteKey}/up`);
       const data = await res.json();
-
+      
       if (data && data.count !== undefined) {
         visitCounter.textContent = `👁️ Visitas: ${data.count.toLocaleString('es-ES')}`;
       } else {
@@ -578,12 +577,8 @@
     return isDay ? weatherWallpapers.clearDay : weatherWallpapers.clearNight;
   }
 
-  // Generador de frases según clima
   // Generador de frases según mapa de códigos WMO exactos de Open-Meteo
   function getWeatherSuggestion(code, isDay) {
-    if (code === 0) return isDay 
-      ? "¡Día espectacular! 😎 Recuerda usar gafas y llevar tu bloqueador solar factor 30." 
-      : "Noche despejada, ideal para salir a observar las estrellas. 🌌";
     if (code === null || code === undefined) {
       return "¡Bienvenido! Que tengas una excelente hora. 🌟";
     }
@@ -594,22 +589,14 @@
         ? "¡Día soleado y despejado! 😎 Recuerda usar gafas y bloqueador solar factor 30." 
         : "Noche totalmente despejada, ideal para salir a contemplar las estrellas. 🌌";
     }
-
-    if (code >= 1 && code <= 3) return isDay 
-      ? "El clima está agradable, perfecto para un pequeño paseo. 🚶‍♂️☁️" 
-      : "Noche tranquila y parcialmente nublada. Perfecto para descansar. 🌙☁️";
+    
     // 1, 2, 3: Algo nublado / Cubierto
     if (code >= 1 && code <= 3) {
       return isDay 
         ? "El clima está algo nublado pero agradable. ⛅ ¡Buen momento para dar una caminata!" 
         : "Noche parcialmente nublada y fresca. 🌙☁️ Ideal para descansar.";
     }
-
-    if (code >= 45 && code <= 48) return "Hay niebla en el ambiente. Conduce con precaución y mantente alerta. 🌫️🚗";
-    
-    if (code >= 51 && code <= 67) return "Está lloviendo. ¡No olvides llevar tu paraguas o un buen impermeable! ☔🌧️";
-    
-    if (code >= 71 && code <= 77) return "¡Está nevando! ❄️ Abrígate muy bien y prepara un buen chocolate caliente. ☕";
+      
     // 45, 48: Niebla
     if (code === 45 || code === 48) {
       return "Hay niebla en la ciudad. 🌫️ Conduce con mucha precaución y mantén tus luces encendidas.";
@@ -619,40 +606,33 @@
     if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
       return "Pronóstico de lluvia. ☔ ¡No olvides llevar tu paraguas o un buen impermeable!";
     }
-
-    if (code >= 80 && code <= 82) return "Posibles chubascos a la vista. 🌂 Mejor lleva un paraguas por si acaso.";
+    
     // 71 a 77: Nieve
     if (code >= 71 && code <= 77) {
       return "¡Está cayendo nieve! ❄️ Abrígate muy bien y disfruta de una bebida caliente. ☕";
     }
-
-    if (code >= 95) return "Tormenta eléctrica en curso. ⛈️ Lo mejor es quedarte resguardado en un lugar seguro. 🏠";
+    
     // 95 a 99: Tormentas eléctricas
     if (code >= 95) {
       return "Alerta de tormenta eléctrica. ⛈️ Procura mantenerte resguardado en un lugar seguro. 🏠";
     }
-
-    return "Disfruta de esta nueva hora. ¡Mantente hidratado! 💧";
+    
     return "¡Mantente preparado y disfruta de esta nueva hora! 💧";
   }
 
   // Activador de Eventos de Cambio de Hora (Fondo + Texto)
   function triggerHourlyEvents() {
-    // Activar el wallpaper si la opción está encendida
     if (wallpaperToggleSel.value === 'on') {
       const imageUrl = getWallpaperForWeather(currentWeatherCode, isCurrentDay);
       wallpaperOverlay.style.backgroundImage = `url('${imageUrl}')`;
       wallpaperOverlay.style.opacity = '1';
     }
 
-    // Mostrar el texto de sugerencia si la opción está encendida y hay datos de clima
-    if (suggestionToggleSel.value === 'on' && currentCityData) {
     if (suggestionToggleSel.value === 'on') {
       weatherSuggestion.textContent = getWeatherSuggestion(currentWeatherCode, isCurrentDay);
       weatherSuggestion.style.opacity = '1';
     }
 
-    // Desvanecer ambos después de 1 minuto
     // Ocultar suavemente después de 1 minuto (60000ms)
     setTimeout(() => {
       wallpaperOverlay.style.opacity = '0';
@@ -739,12 +719,9 @@
   function getWeatherIcon(code, isDay) {
     if (code === 0) return isDay ? '☀️' : '🌙';
     if (code >= 1 && code <= 3) return isDay ? '⛅' : '☁️';
-    if (code >= 45 && code <= 48) return '🌫️';
-    if (code >= 51 && code <= 67) return '🌧️';
     if (code === 45 || code === 48) return '🌫️';
     if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return '🌧️';
     if (code >= 71 && code <= 77) return '❄️';
-    if (code >= 80 && code <= 82) return '🌦️';
     if (code >= 95) return '⛈️';
     return isDay ? '☀️' : '🌙';
   }
@@ -783,7 +760,7 @@
       if (weatherData.current_weather) {
         const temp = Math.round(weatherData.current_weather.temperature);
         currentWeatherCode = weatherData.current_weather.weathercode;
-
+        
         isCurrentDay = weatherData.current_weather.is_day !== undefined 
           ? Boolean(weatherData.current_weather.is_day) 
           : (new Date().getHours() >= 6 && new Date().getHours() < 20);
@@ -868,7 +845,7 @@
     }
     if(prefs.wallpaperToggle) wallpaperToggleSel.value = prefs.wallpaperToggle;
     if(prefs.suggestionToggle) suggestionToggleSel.value = prefs.suggestionToggle;
-
+    
     if(prefs.format) formatSel.value = prefs.format;
     if(prefs.brightness) {
       brightnessSel.value = prefs.brightness;
@@ -881,7 +858,7 @@
     }
     if(prefs.font) { fontSel.value = prefs.font; document.body.style.fontFamily = prefs.font; }
     if(prefs.colorMode) { colorModeSel.value = prefs.colorMode; }
-
+    
     if(colorModeSel.value === 'auto') {
       applyColorForHour(new Date().getHours());
     } else if(prefs.color) { 
@@ -953,14 +930,11 @@
 
     if (screenModeSel.value === 'clock') {
       let suffix = '';
-
+      
       // Cambio de hora exacto (00:00:00)
       if (h !== lastHour && m === 0 && s <= 1) {
         playCasioBeep(2048, 0.15);
         applyColorForHour(h);
-        updateWeatherData().then(() => {
-          triggerHourlyEvents(); // Activa fondo y sugerencia de clima
-        });
         
         // Actualizamos primero el clima y lanzamos los eventos asegurando que el dato sea fresco
         if (currentCityData) {
@@ -1090,7 +1064,7 @@
     isRinging = true;
     playCasioDoubleBeep();
     alarmInterval = setInterval(playCasioDoubleBeep, 1000);
-
+    
     if ('vibrate' in navigator) {
       navigator.vibrate([100, 50, 100]);
       vibrationInterval = setInterval(() => {
@@ -1111,7 +1085,7 @@
       vibrationInterval = null;
     }
     if ('vibrate' in navigator) navigator.vibrate(0);
-
+    
     stopAlarmBtn.style.display = 'none';
     isRinging = false;
     alarmActive = false; 
@@ -1192,7 +1166,7 @@
   controls.addEventListener('change', resetHideTimer);
   controls.addEventListener('focusin', () => clearTimeout(hideTimeout));
   controls.addEventListener('focusout', resetHideTimer);
-
+  
   document.addEventListener('click', (e) => {
     if (!controls.contains(e.target) && e.target !== settingsToggle && !clockContainer.contains(e.target)) {
       hideControls();
@@ -1202,7 +1176,7 @@
   wallpaperToggleSel.addEventListener('change', savePrefs);
   suggestionToggleSel.addEventListener('change', savePrefs);
   formatSel.addEventListener('change', ()=>{ updateClock(); savePrefs(); });
-
+  
   brightnessSel.addEventListener('change', ()=>{
     document.documentElement.style.setProperty('--clock-brightness', brightnessSel.value);
     savePrefs();
@@ -1211,7 +1185,7 @@
   nightModeAutoSel.addEventListener('change', savePrefs);
   sizeSel.addEventListener('change', ()=>{ applySize(); savePrefs(); });
   fontSel.addEventListener('change', ()=>{ document.body.style.fontFamily = fontSel.value; savePrefs(); });
-
+  
   colorModeSel.addEventListener('change', ()=>{
     if (colorModeSel.value === 'auto') {
       applyColorForHour(new Date().getHours());
@@ -1230,7 +1204,7 @@
     document.documentElement.style.setProperty('--accent-color', colorSel.value);
     savePrefs(); 
   });
-
+  
   bgSel.addEventListener('input', ()=>{ 
     document.body.style.backgroundColor = bgSel.value; 
     document.documentElement.style.setProperty('--bg-color', bgSel.value);
@@ -1248,7 +1222,7 @@
       showToast('Selecciona una hora válida');
     }
   });
-
+  
   clearAlarmBtn.addEventListener('click', ()=>{
     alarmTime = null;
     alarmActive = false;
