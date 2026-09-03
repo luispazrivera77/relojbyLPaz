@@ -516,7 +516,7 @@
       <li><strong>💬 Botón de Repetición:</strong> Permite volver a visualizar de inmediato la última frase del alma desplegada en pantalla.</li>
       <li><strong>💬 Sugerencia de Clima (1 min):</strong> Al cambiar la hora, el reloj te dará recomendaciones prácticas según cómo esté el tiempo afuera.</li>
       <li><strong>👁️ Contador Global de Visitas:</strong> Muestra en tiempo real la cantidad acumulada de accesos.</li>
-      <li><strong>🖼️ Wallpaper de Clima (1 min):</strong> Fondo con imágenes HD acorde al tiempo actual al cambiar de hora.</li>
+      <li><strong>🖼️ Wallpaper de Clima (1 min):</strong> Fondo con imágenes HD acorde al tiempo actual al cambio de hora.</li>
       <li><strong>⏱️ Cronómetro y Temporizador:</strong> Funciones de tiempo integradas en el menú de ajustes.</li>
       <li><strong>🌙 Modo Noche Automático:</strong> Atenúa la pantalla y atenúa el tono entre las 23:00 y las 07:00 hs.</li>
       <li><strong>🛡️ Protección Anti Burn-In:</strong> Movimiento imperceptible de píxeles cada 10 min para proteger pantallas OLED.</li>
@@ -640,7 +640,7 @@
   let currentCityData = null;
   let currentWeatherCode = null;
   let isCurrentDay = true;
-  let lastDisplayedPhrase = "¡Bienvenido a tu Reloj Minimalista!";
+  let lastDisplayedPhrase = "Hoy tienes permiso para avanzar lento, pero avanzar igual.";
   let soulPhraseTimeout = null;
 
   // Estado Cronómetro y Temporizador
@@ -758,7 +758,10 @@
   }
 
   // Mostrar Frase del Alma con su pulso y duración de 1 minuto
-  function showSoulPhrase(phraseText) {
+  function showSoulPhrase(phraseText, isManual = false) {
+    // Si se intenta activar de forma automática pero está desactivado en el menú, no hace nada
+    if (!isManual && soulPhraseToggleSel.value !== 'on') return;
+
     lastDisplayedPhrase = phraseText;
     soulPhrase.textContent = phraseText;
     
@@ -789,13 +792,13 @@
       const now = new Date();
       const totalMinutesOfDay = now.getHours() * 60 + now.getMinutes();
       const phraseIndex = Math.floor(totalMinutesOfDay / 55.38) % soulPhrasesList.length;
-      showSoulPhrase(soulPhrasesList[phraseIndex]);
+      showSoulPhrase(soulPhrasesList[phraseIndex], false);
     }
   }
 
-  // Botón para repetir el último mensaje desplegado
+  // Botón para repetir el último mensaje desplegado de forma manual
   repeatPhraseBtn.addEventListener('click', () => {
-    showSoulPhrase(lastDisplayedPhrase);
+    showSoulPhrase(lastDisplayedPhrase, true);
     showToast('💬 Repitiendo última frase');
   });
 
@@ -1002,7 +1005,12 @@
       counterToggleSel.value = prefs.counterToggle;
       visitCounter.style.display = prefs.counterToggle === 'on' ? 'block' : 'none';
     }
-    if(prefs.soulPhraseToggle) soulPhraseToggleSel.value = prefs.soulPhraseToggle;
+    if(prefs.soulPhraseToggle) {
+      soulPhraseToggleSel.value = prefs.soulPhraseToggle;
+      if(prefs.soulPhraseToggle === 'off') {
+        soulPhrase.classList.remove('active', 'light-pulse');
+      }
+    }
     if(prefs.wallpaperToggle) wallpaperToggleSel.value = prefs.wallpaperToggle;
     if(prefs.suggestionToggle) suggestionToggleSel.value = prefs.suggestionToggle;
     
@@ -1217,7 +1225,13 @@
     savePrefs();
   });
 
-  soulPhraseToggleSel.addEventListener('change', savePrefs);
+  soulPhraseToggleSel.addEventListener('change', () => {
+    if (soulPhraseToggleSel.value === 'off') {
+      soulPhrase.classList.remove('active', 'light-pulse');
+      if (soulPhraseTimeout) clearTimeout(soulPhraseTimeout);
+    }
+    savePrefs();
+  });
 
   function updateAlarmUI() {
     if (alarmActive && alarmTime) {
