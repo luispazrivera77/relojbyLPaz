@@ -5,302 +5,302 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Reloj Minimalista por LPaz</title>
 <style>
-  :root { 
-    --accent-color: #00ff00;
-    --bg-color: #000000;
-    --clock-brightness: 1;
-    --size-factor: 1;
-  }
+  :root { 
+    --accent-color: #00ff00;
+    --bg-color: #000000;
+    --clock-brightness: 1;
+    --size-factor: 1;
+  }
 
-  * {
-    box-sizing: border-box;
-  }
+  * {
+    box-sizing: border-box;
+  }
 
-  body {
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    height: 100dvh;
-    font-family: monospace;
-    background: var(--bg-color);
-    color: var(--accent-color);
-    transition: background 0.3s, color 0.5s ease;
-    overflow: hidden;
-    position: relative;
-  }
+  body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    height: 100dvh;
+    font-family: monospace;
+    background: var(--bg-color);
+    color: var(--accent-color);
+    transition: background 0.3s, color 0.5s ease;
+    overflow: hidden;
+    position: relative;
+  }
 
-  /* Capa de Wallpaper para el cambio de hora */
-  #wallpaperOverlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-    opacity: 0;
-    transition: opacity 1.5s ease-in-out;
-    z-index: 1;
-    pointer-events: none;
-  }
+  /* Capa de Wallpaper para el cambio de hora */
+  #wallpaperOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+    z-index: 1;
+    pointer-events: none;
+  }
 
-  /* Capa oscura para mantener la legibilidad de los números */
-  #wallpaperOverlay::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.55);
-  }
-  
-  /* Contenedor principal del reloj, fecha y clima */
-  #clockContainer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    opacity: var(--clock-brightness);
-    transition: opacity 0.3s ease, transform 1s ease;
-    cursor: pointer;
-    user-select: none;
-    position: relative;
-    width: 100%;
-    padding: 0 10px;
-    z-index: 2;
-  }
+  /* Capa oscura para mantener la legibilidad de los números */
+  #wallpaperOverlay::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.55);
+  }
+  
+  /* Contenedor principal del reloj, fecha y clima */
+  #clockContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: var(--clock-brightness);
+    transition: opacity 0.3s ease, transform 1s ease;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    width: 100%;
+    padding: 0 10px;
+    z-index: 2;
+  }
 
-  /* Escalado dinámico responsivo */
-  #clock {
-    font-size: calc(clamp(3.2rem, 14vw, 12rem) * var(--size-factor));
-    letter-spacing: 2px;
-    text-align: center;
-    line-height: 1;
-    white-space: nowrap;
-  }
+  /* Escalado dinámico responsivo */
+  #clock {
+    font-size: calc(clamp(3.2rem, 14vw, 12rem) * var(--size-factor));
+    letter-spacing: 2px;
+    text-align: center;
+    line-height: 1;
+    white-space: nowrap;
+  }
 
-  #date {
-    font-size: calc(clamp(0.9rem, 3.5vw, 2.5rem) * var(--size-factor));
-    letter-spacing: 1px;
-    margin-top: 1rem;
-    opacity: 0.85;
-    text-align: center;
-    text-transform: capitalize;
-  }
+  #date {
+    font-size: calc(clamp(0.9rem, 3.5vw, 2.5rem) * var(--size-factor));
+    letter-spacing: 1px;
+    margin-top: 1rem;
+    opacity: 0.85;
+    text-align: center;
+    text-transform: capitalize;
+  }
 
-  /* Widget de Clima */
-  #weather {
-    display: none;
-    font-size: calc(clamp(0.85rem, 2.5vw, 1.8rem) * var(--size-factor));
-    margin-top: 0.8rem;
-    align-items: center;
-    gap: 8px;
-    opacity: 0.9;
-    text-align: center;
-  }
+  /* Widget de Clima */
+  #weather {
+    display: none;
+    font-size: calc(clamp(0.85rem, 2.5vw, 1.8rem) * var(--size-factor));
+    margin-top: 0.8rem;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.9;
+    text-align: center;
+  }
 
-  /* Indicador visual de Alarma Activa */
-  #alarmIndicator {
-    display: none;
-    font-size: calc(clamp(0.8rem, 2vw, 1.2rem) * var(--size-factor));
-    margin-top: 15px;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255, 255, 255, 0.08);
-    padding: 4px 12px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-  }
+  /* Indicador visual de Alarma Activa */
+  #alarmIndicator {
+    display: none;
+    font-size: calc(clamp(0.8rem, 2vw, 1.2rem) * var(--size-factor));
+    margin-top: 15px;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
 
-  /* Sugerencia de clima al cambio de hora */
-  #weatherSuggestion {
-    position: absolute;
-    bottom: 15%;
-    font-size: calc(clamp(1rem, 2.5vw, 1.6rem) * var(--size-factor));
-    text-align: center;
-    opacity: 0;
-    transition: opacity 1.5s ease-in-out;
-    pointer-events: none;
-    max-width: 85%;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.9);
-    z-index: 5;
-    color: #ffffff;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
+  /* Sugerencia de clima al cambio de hora */
+  #weatherSuggestion {
+    position: absolute;
+    bottom: 15%;
+    font-size: calc(clamp(1rem, 2.5vw, 1.6rem) * var(--size-factor));
+    text-align: center;
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+    pointer-events: none;
+    max-width: 85%;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+    z-index: 5;
+    color: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
 
-  /* Contador de Visitas Minimalista */
-  #visitCounter {
-    position: absolute;
-    bottom: 20px;
-    font-size: 0.8rem;
-    opacity: 0.5;
-    letter-spacing: 1px;
-    z-index: 5;
-    user-select: none;
-    transition: opacity 0.3s ease;
-  }
+  /* Contador de Visitas Minimalista */
+  #visitCounter {
+    position: absolute;
+    bottom: 20px;
+    font-size: 0.8rem;
+    opacity: 0.5;
+    letter-spacing: 1px;
+    z-index: 5;
+    user-select: none;
+    transition: opacity 0.3s ease;
+  }
 
-  /* Botones flotantes distribuidos en las 4 esquinas */
-  .icon-btn {
-    position: absolute;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: inherit;
-    font-size: 1.3rem;
-    padding: 8px 12px;
-    border-radius: 50%;
-    cursor: pointer;
-    z-index: 10;
-    transition: transform 0.2s, background 0.2s;
-  }
-  .icon-btn:hover {
-    transform: scale(1.1);
-    background: rgba(255, 255, 255, 0.2);
-  }
-  #settingsToggle { bottom: 20px; right: 20px; }
-  #infoToggle { bottom: 20px; left: 20px; }
-  #shareToggle { top: 20px; right: 20px; }
-  #castToggle { top: 20px; left: 20px; }
+  /* Botones flotantes distribuidos en las 4 esquinas */
+  .icon-btn {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: inherit;
+    font-size: 1.3rem;
+    padding: 8px 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .icon-btn:hover {
+    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.2);
+  }
+  #settingsToggle { bottom: 20px; right: 20px; }
+  #infoToggle { bottom: 20px; left: 20px; }
+  #shareToggle { top: 20px; right: 20px; }
+  #castToggle { top: 20px; left: 20px; }
 
-  /* Panel de Controles */
-  .controls {
-    position: absolute;
-    bottom: 80px;
-    background: rgba(0, 0, 0, 0.95);
-    border: 1px solid #333;
-    padding: 15px;
-    border-radius: 8px;
-    display: none;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-    max-width: 90%;
-    z-index: 9;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.8);
-    max-height: 70vh;
-    overflow-y: auto;
-  }
-  label { font-size: 0.85rem; color:#ddd; display: flex; flex-direction: column; gap: 4px; }
-  select, input[type="color"], input[type="time"], input[type="text"], input[type="number"], button {
-    padding:.4rem .6rem; border:1px solid #444; border-radius:4px; background:#111; color:#fff;
-    font-family: inherit;
-  }
-  button {
-    cursor:pointer; font-weight:600; border-color:#555;
-    transition: background 0.2s;
-  }
-  button:hover { background:#333; }
-  
-  .weather-input-group {
-    display: flex;
-    gap: 4px;
-  }
-  .weather-input-group input { width: 110px; }
+  /* Panel de Controles */
+  .controls {
+    position: absolute;
+    bottom: 80px;
+    background: rgba(0, 0, 0, 0.95);
+    border: 1px solid #333;
+    padding: 15px;
+    border-radius: 8px;
+    display: none;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    max-width: 90%;
+    z-index: 9;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  label { font-size: 0.85rem; color:#ddd; display: flex; flex-direction: column; gap: 4px; }
+  select, input[type="color"], input[type="time"], input[type="text"], input[type="number"], button {
+    padding:.4rem .6rem; border:1px solid #444; border-radius:4px; background:#111; color:#fff;
+    font-family: inherit;
+  }
+  button {
+    cursor:pointer; font-weight:600; border-color:#555;
+    transition: background 0.2s;
+  }
+  button:hover { background:#333; }
+  
+  .weather-input-group {
+    display: flex;
+    gap: 4px;
+  }
+  .weather-input-group input { width: 110px; }
 
-  /* Botón de detener alarma/timer */
-  #stopAlarmBtn {
-    background: #ff3333;
-    color: white;
-    border: none;
-    display: none;
-    margin-top: 15px;
-    padding: 10px 20px;
-    font-size: 1.1rem;
-    border-radius: 4px;
-    animation: pulse 1s infinite;
-    z-index: 10;
-  }
+  /* Botón de detener alarma/timer */
+  #stopAlarmBtn {
+    background: #ff3333;
+    color: white;
+    border: none;
+    display: none;
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-size: 1.1rem;
+    border-radius: 4px;
+    animation: pulse 1s infinite;
+    z-index: 10;
+  }
 
-  @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-  }
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
 
-  /* Modal de Información */
-  .modal-overlay {
-    position: fixed;
-    top:0; left:0; width:100vw; height:100vh;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(4px);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
-  }
-  .modal-content {
-    background: #181818;
-    color: #eee;
-    border: 1px solid #444;
-    padding: 25px;
-    border-radius: 12px;
-    max-width: 500px;
-    width: 90%;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.9);
-  }
-  .modal-content h2 { margin-top: 0; color: var(--accent-color); border-bottom: 1px solid #333; padding-bottom: 10px; }
-  .modal-content ul { padding-left: 20px; line-height: 1.6; font-size: 0.9rem; }
-  .modal-content li { margin-bottom: 8px; }
+  /* Modal de Información */
+  .modal-overlay {
+    position: fixed;
+    top:0; left:0; width:100vw; height:100vh;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+  }
+  .modal-content {
+    background: #181818;
+    color: #eee;
+    border: 1px solid #444;
+    padding: 25px;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.9);
+  }
+  .modal-content h2 { margin-top: 0; color: var(--accent-color); border-bottom: 1px solid #333; padding-bottom: 10px; }
+  .modal-content ul { padding-left: 20px; line-height: 1.6; font-size: 0.9rem; }
+  .modal-content li { margin-bottom: 8px; }
 
-  /* Sección de Contacto / WhatsApp */
-  .contact-section {
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #333;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.95rem;
-  }
-  .whatsapp-link {
-    color: #25D366;
-    text-decoration: none;
-    font-weight: bold;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: opacity 0.2s;
-  }
-  .whatsapp-link:hover {
-    opacity: 0.8;
-    text-decoration: underline;
-  }
+  /* Sección de Contacto / WhatsApp */
+  .contact-section {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+  }
+  .whatsapp-link {
+    color: #25D366;
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: opacity 0.2s;
+  }
+  .whatsapp-link:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+  }
 
-  .close-modal-btn {
-    display: block;
-    margin: 20px 0 0 auto;
-    background: var(--accent-color);
-    color: #000;
-    border: none;
-    padding: 8px 16px;
-    font-weight: bold;
-    border-radius: 4px;
-  }
+  .close-modal-btn {
+    display: block;
+    margin: 20px 0 0 auto;
+    background: var(--accent-color);
+    color: #000;
+    border: none;
+    padding: 8px 16px;
+    font-weight: bold;
+    border-radius: 4px;
+  }
 
-  /* Notificaciones Toast */
-  .toast {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-20px);
-    background: rgba(30, 30, 30, 0.95);
-    color: #fff;
-    border: 1px solid var(--accent-color);
-    padding: 12px 20px;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    z-index: 100;
-    opacity: 0;
-    transition: opacity 0.3s, transform 0.3s;
-    pointer-events: none;
-    white-space: nowrap;
-  }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  /* Notificaciones Toast */
+  .toast {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: rgba(30, 30, 30, 0.95);
+    color: #fff;
+    border: 1px solid var(--accent-color);
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
@@ -308,10 +308,10 @@
 <div id="wallpaperOverlay"></div>
 
 <div id="clockContainer" tabindex="0" aria-label="Reloj">
-  <div id="clock"></div>
-  <div id="date"></div>
-  <div id="weather"></div>
-  <div id="alarmIndicator" title="Alarma activa">⏰ <span id="alarmIndicatorTime">--:--</span></div>
+  <div id="clock"></div>
+  <div id="date"></div>
+  <div id="weather"></div>
+  <div id="alarmIndicator" title="Alarma activa">⏰ <span id="alarmIndicatorTime">--:--</span></div>
 </div>
 
 <!-- Texto de sugerencia de clima flotante -->
@@ -328,917 +328,928 @@
 <button id="settingsToggle" class="icon-btn" title="Ajustes">⚙️</button>
 
 <div class="controls" id="controls" aria-live="polite">
-  <label>Modo de Pantalla:
-    <select id="screenMode">
-      <option value="clock" selected>Reloj</option>
-      <option value="stopwatch">Cronómetro</option>
-      <option value="timer">Temporizador</option>
-    </select>
-  </label>
+  <label>Modo de Pantalla:
+    <select id="screenMode">
+      <option value="clock" selected>Reloj</option>
+      <option value="stopwatch">Cronómetro</option>
+      <option value="timer">Temporizador</option>
+    </select>
+  </label>
 
-  <div id="timerControls" style="display: none; gap: 8px; align-items: flex-end;">
-    <label>Minutos:
-      <input type="number" id="timerMinutes" min="0" max="180" value="5" />
-    </label>
-    <button id="startTimerBtn">▶️ Iniciar</button>
-    <button id="resetTimerBtn">🔄 Reiniciar</button>
-  </div>
+  <div id="timerControls" style="display: none; gap: 8px; align-items: flex-end;">
+    <label>Minutos:
+      <input type="number" id="timerMinutes" min="0" max="180" value="5" />
+    </label>
+    <button id="startTimerBtn">▶️ Iniciar</button>
+    <button id="resetTimerBtn">🔄 Reiniciar</button>
+  </div>
 
-  <div id="stopwatchControls" style="display: none; gap: 8px; align-items: flex-end;">
-    <button id="startStopwatchBtn">▶️ Iniciar</button>
-    <button id="resetStopwatchBtn">🔄 Reiniciar</button>
-  </div>
+  <div id="stopwatchControls" style="display: none; gap: 8px; align-items: flex-end;">
+    <button id="startStopwatchBtn">▶️ Iniciar</button>
+    <button id="resetStopwatchBtn">🔄 Reiniciar</button>
+  </div>
 
-  <label>Contador de Visitas:
-    <select id="counterToggle">
-      <option value="on" selected>Visible</option>
-      <option value="off">Oculto</option>
-    </select>
-  </label>
-  <label>Sugerencia de Clima (1 min):
-    <select id="suggestionToggle">
-      <option value="on" selected>Activado</option>
-      <option value="off">Desactivado</option>
-    </select>
-  </label>
-  <label>Wallpaper Cambio Hora:
-    <select id="wallpaperToggle">
-      <option value="on" selected>Activado (1 min)</option>
-      <option value="off">Desactivado</option>
-    </select>
-  </label>
-  <label>Formato:
-    <select id="format">
-      <option value="24">24h</option>
-      <option value="12">12h</option>
-    </select>
-  </label>
-  <label>Brillo:
-    <select id="brightness">
-      <option value="1">Alto (100%)</option>
-      <option value="0.6">Medio (60%)</option>
-      <option value="0.3">Bajo (30%)</option>
-    </select>
-  </label>
-  <label>Modo Noche (23h-07h):
-    <select id="nightModeAuto">
-      <option value="off">Desactivado</option>
-      <option value="on">Activado (Brillo bajo/Rojo)</option>
-    </select>
-  </label>
-  <label>Escala:
-    <select id="size">
-      <option value="50">Pequeño (50%)</option>
-      <option value="75">Mediano (75%)</option>
-      <option value="100" selected>Auto / Normal (100%)</option>
-      <option value="125">Grande (125%)</option>
-      <option value="150">Extra Grande (150%)</option>
-    </select>
-  </label>
-  <label>Fuente:
-    <select id="font">
-      <option value="monospace">Monospace</option>
-      <option value="sans-serif">Sans Serif</option>
-      <option value="serif">Serif</option>
-      <option value="'Courier New', monospace">Courier</option>
-    </select>
-  </label>
-  <label>Modo Color:
-    <select id="colorMode">
-      <option value="manual">Fijo (Manual)</option>
-      <option value="auto">Ciclado (Cada 1h)</option>
-    </select>
-  </label>
-  <label>Color números:
-    <input type="color" id="color" value="#00ff00" />
-  </label>
-  <label>Color fondo:
-    <input type="color" id="bgcolor" value="#000000" />
-  </label>
-  <label>Ciudad Clima:
-    <div class="weather-input-group">
-      <input type="text" id="cityInput" placeholder="Ej: Santiago" />
-      <button id="searchCityBtn">🔍</button>
-    </div>
-  </label>
-  <label>Alarma:
-    <input type="time" id="alarmTime" />
-  </label>
-  <button id="setAlarm">Activar</button>
-  <button id="clearAlarm">Quitar</button>
-  <button id="fullscreenBtn">⛶ Pantalla completa</button>
+  <label>Contador de Visitas:
+    <select id="counterToggle">
+      <option value="on" selected>Visible</option>
+      <option value="off">Oculto</option>
+    </select>
+  </label>
+  <label>Sugerencia de Clima (1 min):
+    <select id="suggestionToggle">
+      <option value="on" selected>Activado</option>
+      <option value="off">Desactivado</option>
+    </select>
+  </label>
+  <label>Wallpaper Cambio Hora:
+    <select id="wallpaperToggle">
+      <option value="on" selected>Activado (1 min)</option>
+      <option value="off">Desactivado</option>
+    </select>
+  </label>
+  <label>Formato:
+    <select id="format">
+      <option value="24">24h</option>
+      <option value="12">12h</option>
+    </select>
+  </label>
+  <label>Brillo:
+    <select id="brightness">
+      <option value="1">Alto (100%)</option>
+      <option value="0.6">Medio (60%)</option>
+      <option value="0.3">Bajo (30%)</option>
+    </select>
+  </label>
+  <label>Modo Noche (23h-07h):
+    <select id="nightModeAuto">
+      <option value="off">Desactivado</option>
+      <option value="on">Activado (Brillo bajo/Rojo)</option>
+    </select>
+  </label>
+  <label>Escala:
+    <select id="size">
+      <option value="50">Pequeño (50%)</option>
+      <option value="75">Mediano (75%)</option>
+      <option value="100" selected>Auto / Normal (100%)</option>
+      <option value="125">Grande (125%)</option>
+      <option value="150">Extra Grande (150%)</option>
+    </select>
+  </label>
+  <label>Fuente:
+    <select id="font">
+      <option value="monospace">Monospace</option>
+      <option value="sans-serif">Sans Serif</option>
+      <option value="serif">Serif</option>
+      <option value="'Courier New', monospace">Courier</option>
+    </select>
+  </label>
+  <label>Modo Color:
+    <select id="colorMode">
+      <option value="manual">Fijo (Manual)</option>
+      <option value="auto">Ciclado (Cada 1h)</option>
+    </select>
+  </label>
+  <label>Color números:
+    <input type="color" id="color" value="#00ff00" />
+  </label>
+  <label>Color fondo:
+    <input type="color" id="bgcolor" value="#000000" />
+  </label>
+  <label>Ciudad Clima:
+    <div class="weather-input-group">
+      <input type="text" id="cityInput" placeholder="Ej: Santiago" />
+      <button id="searchCityBtn">🔍</button>
+    </div>
+  </label>
+  <label>Alarma:
+    <input type="time" id="alarmTime" />
+  </label>
+  <button id="setAlarm">Activar</button>
+  <button id="clearAlarm">Quitar</button>
+  <button id="fullscreenBtn">⛶ Pantalla completa</button>
 </div>
 
 <!-- Modal de Información -->
 <div id="infoModal" class="modal-overlay">
-  <div class="modal-content">
-    <h2>Reloj Minimalista por LPaz</h2>
-    <ul>
-      <li><strong>💬 Sugerencia de Clima (1 min):</strong> Al cambiar la hora, el reloj te dará recomendaciones prácticas según cómo esté el tiempo afuera (Ej. usar bloqueador, llevar paraguas).</li>
-      <li><strong>👁️ Contador Global de Visitas:</strong> Muestra en tiempo real la cantidad acumulada de accesos.</li>
-      <li><strong>🖼️ Wallpaper de Clima (1 min):</strong> Fondo con imágenes HD acorde al tiempo actual al cambiar de hora.</li>
-      <li><strong>⏱️ Cronómetro y Temporizador:</strong> Funciones de tiempo integradas en el menú de ajustes.</li>
-      <li><strong>🌙 Modo Noche Automático:</strong> Atenúa la pantalla y atenúa el tono entre las 23:00 y las 07:00 hs.</li>
-      <li><strong>🛡️ Protección Anti Burn-In:</strong> Movimiento imperceptible de píxeles cada 10 min para proteger pantallas OLED.</li>
-      <li><strong>📺 Transmisión a Smart TV:</strong> Envía la vista del reloj a tu pantalla inteligente.</li>
-    </ul>
+  <div class="modal-content">
+    <h2>Reloj Minimalista por LPaz</h2>
+    <ul>
+      <li><strong>💬 Sugerencia de Clima (1 min):</strong> Al cambiar la hora, el reloj te dará recomendaciones prácticas según cómo esté el tiempo afuera (Ej. usar bloqueador, llevar paraguas).</li>
+      <li><strong>👁️ Contador Global de Visitas:</strong> Muestra en tiempo real la cantidad acumulada de accesos.</li>
+      <li><strong>🖼️ Wallpaper de Clima (1 min):</strong> Fondo con imágenes HD acorde al tiempo actual al cambiar de hora.</li>
+      <li><strong>⏱️ Cronómetro y Temporizador:</strong> Funciones de tiempo integradas en el menú de ajustes.</li>
+      <li><strong>🌙 Modo Noche Automático:</strong> Atenúa la pantalla y atenúa el tono entre las 23:00 y las 07:00 hs.</li>
+      <li><strong>🛡️ Protección Anti Burn-In:</strong> Movimiento imperceptible de píxeles cada 10 min para proteger pantallas OLED.</li>
+      <li><strong>📺 Transmisión a Smart TV:</strong> Envía la vista del reloj a tu pantalla inteligente.</li>
+    </ul>
 
-    <div class="contact-section">
-      <span>💬</span>
-      <a class="whatsapp-link" href="https://wa.me/56941524196" target="_blank" rel="noopener noreferrer">
-        Contacto LPaz: +56 9 4152 4196
-      </a>
-    </div>
+    <div class="contact-section">
+      <span>💬</span>
+      <a class="whatsapp-link" href="https://wa.me/56941524196" target="_blank" rel="noopener noreferrer">
+        Contacto LPaz: +56 9 4152 4196
+      </a>
+    </div>
 
-    <button id="closeInfoBtn" class="close-modal-btn">Entendido</button>
-  </div>
+    <button id="closeInfoBtn" class="close-modal-btn">Entendido</button>
+  </div>
 </div>
 
 <div id="toast" class="toast" role="alert"></div>
 
 <script>
-  // Elementos UI
-  const wallpaperOverlay = document.getElementById('wallpaperOverlay');
-  const clockContainer = document.getElementById('clockContainer');
-  const clock = document.getElementById('clock');
-  const date = document.getElementById('date');
-  const weatherDiv = document.getElementById('weather');
-  const alarmIndicator = document.getElementById('alarmIndicator');
-  const alarmIndicatorTime = document.getElementById('alarmIndicatorTime');
-  const weatherSuggestion = document.getElementById('weatherSuggestion');
-  const visitCounter = document.getElementById('visitCounter');
-  const controls = document.getElementById('controls');
-  const settingsToggle = document.getElementById('settingsToggle');
-  const infoToggle = document.getElementById('infoToggle');
-  const shareToggle = document.getElementById('shareToggle');
-  const castToggle = document.getElementById('castToggle');
-  const infoModal = document.getElementById('infoModal');
-  const closeInfoBtn = document.getElementById('closeInfoBtn');
-  
-  const screenModeSel = document.getElementById('screenMode');
-  const timerControls = document.getElementById('timerControls');
-  const stopwatchControls = document.getElementById('stopwatchControls');
-  const timerMinutesInput = document.getElementById('timerMinutes');
-  const startTimerBtn = document.getElementById('startTimerBtn');
-  const resetTimerBtn = document.getElementById('resetTimerBtn');
-  const startStopwatchBtn = document.getElementById('startStopwatchBtn');
-  const resetStopwatchBtn = document.getElementById('resetStopwatchBtn');
-
-  const counterToggleSel = document.getElementById('counterToggle');
-  const wallpaperToggleSel = document.getElementById('wallpaperToggle');
-  const suggestionToggleSel = document.getElementById('suggestionToggle');
-  const formatSel = document.getElementById('format');
-  const brightnessSel = document.getElementById('brightness');
-  const nightModeAutoSel = document.getElementById('nightModeAuto');
-  const sizeSel = document.getElementById('size');
-  const fontSel = document.getElementById('font');
-  const colorModeSel = document.getElementById('colorMode');
-  const colorSel = document.getElementById('color');
-  const bgSel = document.getElementById('bgcolor');
-  const cityInput = document.getElementById('cityInput');
-  const searchCityBtn = document.getElementById('searchCityBtn');
-  const alarmInput = document.getElementById('alarmTime');
-  const setAlarmBtn = document.getElementById('setAlarm');
-  const clearAlarmBtn = document.getElementById('clearAlarm');
-  const stopAlarmBtn = document.getElementById('stopAlarmBtn');
-  const fullscreenBtn = document.getElementById('fullscreenBtn');
-  const toast = document.getElementById('toast');
-
-  // Estado del Reloj y Funciones
-  let alarmTime = null;
-  let alarmActive = false;
-  let isRinging = false;
-  let hideTimeout = null;
-  let lastHour = new Date().getHours();
-  let wakeLock = null;
-  let vibrationInterval = null;
-  let alarmInterval = null;
-  let audioCtx = null;
-  let currentCityData = null;
-  let currentWeatherCode = null;
-  let isCurrentDay = true;
-
-  // Estado Cronómetro y Temporizador
-  let stopwatchTime = 0;
-  let stopwatchInterval = null;
-  let timerTime = 0;
-  let timerInterval = null;
-
-  // Lógica actualizada del Contador Global de Visitas (CountAPI)
-  async function initVisitCounter() {
-    try {
-      // Namespace y Key únicos para tu reloj
-      const namespace = "lpaz-reloj-minimalista-2026";
-      const key = "visitas";
-      
-      const res = await fetch(`https://api.countapi.xyz/hit/${namespace}/${key}`);
-      const data = await res.json();
-      
-      if (data && data.value !== undefined) {
-        visitCounter.textContent = `👁️ Visitas: ${data.value.toLocaleString('es-ES')}`;
-      } else {
-        fetchReadCounter();
-      }
-    } catch (err) {
-      fetchReadCounter();
-    }
-  }
-
-  async function fetchReadCounter() {
-    try {
-      const namespace = "lpaz-reloj-minimalista-2026";
-      const key = "visitas";
-      const res = await fetch(`https://api.countapi.xyz/get/${namespace}/${key}`);
-      const data = await res.json();
-      if (data && data.value !== undefined) {
-        visitCounter.textContent = `👁️ Visitas: ${data.value.toLocaleString('es-ES')}`;
-      } else {
-        visitCounter.textContent = `👁️ Visitas: --`;
-      }
-    } catch (e) {
-      visitCounter.textContent = `👁️ Visitas: --`;
-    }
-  }
-
-  // Colección de Wallpapers por clima
-  const weatherWallpapers = {
-    clearDay: "https://images.unsplash.com/photo-1601297183305-6df142704ea2?auto=format&fit=crop&w=1920&q=80",
-    clearNight: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1920&q=80",
-    clouds: "https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=1920&q=80",
-    rain: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=1920&q=80",
-    snow: "https://images.unsplash.com/photo-1491002052546-bf38f186af56?auto=format&fit=crop&w=1920&q=80",
-    thunder: "https://images.unsplash.com/photo-1605727216801-e27ce1d0cc28?auto=format&fit=crop&w=1920&q=80",
-    default: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80"
-  };
-
-  function getWallpaperForWeather(code, isDay) {
-    if (code === 0) return isDay ? weatherWallpapers.clearDay : weatherWallpapers.clearNight;
-    if (code >= 1 && code <= 3) return weatherWallpapers.clouds;
-    if (code >= 45 && code <= 67) return weatherWallpapers.rain;
-    if (code >= 71 && code <= 77) return weatherWallpapers.snow;
-    if (code >= 80 && code <= 82) return weatherWallpapers.rain;
-    if (code >= 95) return weatherWallpapers.thunder;
-    return isDay ? weatherWallpapers.clearDay : weatherWallpapers.clearNight;
-  }
-
-  // Generador de frases según mapa de códigos WMO exactos de Open-Meteo
-  function getWeatherSuggestion(code, isDay) {
-    if (code === null || code === undefined) {
-      return "¡Bienvenido! Que tengas una excelente hora. 🌟";
-    }
-
-    if (code === 0) {
-      return isDay 
-        ? "¡Día soleado y despejado! 😎 Recuerda usar gafas y bloqueador solar factor 30." 
-        : "Noche totalmente despejada, ideal para salir a contemplar las estrellas. 🌌";
-    }
-    
-    if (code >= 1 && code <= 3) {
-      return isDay 
-        ? "El clima está algo nublado pero agradable. ⛅ ¡Buen momento para dar una caminata!" 
-        : "Noche parcialmente nublada y fresca. 🌙☁️ Ideal para descansar.";
-    }
-      
-    if (code === 45 || code === 48) {
-      return "Hay niebla en la ciudad. 🌫️ Conduce con mucha precaución y mantén tus luces encendidas.";
-    }
-
-    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
-      return "Pronóstico de lluvia. ☔ ¡No olvides llevar tu paraguas o un buen impermeable!";
-    }
-    
-    if (code >= 71 && code <= 77) {
-      return "¡Está cayendo nieve! ❄️ Abrígate muy bien y disfruta de una bebida caliente. ☕";
-    }
-    
-    if (code >= 95) {
-      return "Alerta de tormenta eléctrica. ⛈️ Procura mantenerte resguardado en un lugar seguro. 🏠";
-    }
-    
-    return "¡Mantente preparado y disfruta de esta nueva hora! 💧";
-  }
-
-  function triggerHourlyEvents() {
-    if (wallpaperToggleSel.value === 'on') {
-      const imageUrl = getWallpaperForWeather(currentWeatherCode, isCurrentDay);
-      wallpaperOverlay.style.backgroundImage = `url('${imageUrl}')`;
-      wallpaperOverlay.style.opacity = '1';
-    }
-
-    if (suggestionToggleSel.value === 'on') {
-      weatherSuggestion.textContent = getWeatherSuggestion(currentWeatherCode, isCurrentDay);
-      weatherSuggestion.style.opacity = '1';
-    }
-
-    setTimeout(() => {
-      wallpaperOverlay.style.opacity = '0';
-      weatherSuggestion.style.opacity = '0';
-    }, 60000);
-  }
-
-  const hourlyColors = [
-    "#00ff00", "#00ffff", "#ff00ff", "#ffff00", "#ff8800", "#0088ff",
-    "#ff3366", "#ffffff", "#a6ff00", "#00ffaa", "#ff99cc", "#ffcc00",
-    "#00e5ff", "#ff0055", "#76ff03", "#d500f9", "#ffab00", "#1de9b6",
-    "#ff3d00", "#00b0ff", "#f4ff81", "#e040fb", "#64ffda", "#ff6e40"
-  ];
-
-  setInterval(() => {
-    const shiftX = (Math.random() - 0.5) * 8;
-    const shiftY = (Math.random() - 0.5) * 8;
-    clockContainer.style.transform = `translate(${shiftX}px, ${shiftY}px)`;
-  }, 600000);
-
-  async function castToSmartTV() {
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-    if ('PresentationRequest' in window && !isMobile) {
-      try {
-        const presentationRequest = new PresentationRequest([window.location.href]);
-        await presentationRequest.start();
-        showToast('📺 Conectando con Smart TV...');
-      } catch (err) {
-        if (err.name !== 'NotFoundError' && err.name !== 'NotAllowedError') {
-          showToast('No se encontraron Smart TVs cercanas');
-        }
-      }
-    } else if (isMobile) {
-      const isAndroid = /Android/i.test(navigator.userAgent);
-      if (isAndroid) {
-        showToast('📱 Toca los 3 puntos (⋮) del navegador y elige "Transmitir"');
-      } else {
-        showToast('📱 Usa "Duplicar Pantalla" desde el Centro de Control de tu iPhone');
-      }
-    } else {
-      showToast('Usa la opción "Enviar/Cast" de tu navegador');
-    }
-  }
-
-  function applyColorForHour(hour) {
-    if (colorModeSel.value === 'auto') {
-      const autoColor = hourlyColors[hour % 24];
-      document.body.style.color = autoColor;
-      document.documentElement.style.setProperty('--accent-color', autoColor);
-      colorSel.value = autoColor;
-    }
-  }
-
-  async function shareClock() {
-    const shareData = {
-      title: 'Reloj Minimalista por LPaz',
-      text: '¡Mira este Reloj Minimalista Pro configurable para PC y móvil!',
-      url: window.location.href
-    };
-
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          copyToClipboard();
-        }
-      }
-    } else {
-      copyToClipboard();
-    }
-  }
-
-  function copyToClipboard() {
-    navigator.clipboard.writeText(window.location.href)
-      .then(() => showToast('📋 Enlace copiado al portapapeles'))
-      .catch(() => showToast('Error al copiar enlace'));
-  }
-
-  function getWeatherIcon(code, isDay) {
-    if (code === 0) return isDay ? '☀️' : '🌙';
-    if (code >= 1 && code <= 3) return isDay ? '⛅' : '☁️';
-    if (code === 45 || code === 48) return '🌫️';
-    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return '🌧️';
-    if (code >= 71 && code <= 77) return '❄️';
-    if (code >= 95) return '⛈️';
-    return isDay ? '☀️' : '🌙';
-  }
-
-  async function fetchCityWeather(cityName) {
-    try {
-      const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=es&format=json`);
-      const geoData = await geoRes.json();
-
-      if (!geoData.results || geoData.results.length === 0) {
-        showToast('Ciudad no encontrada');
-        return;
-      }
-
-      const city = geoData.results[0];
-      currentCityData = {
-        name: city.name,
-        lat: city.latitude,
-        lon: city.longitude
-      };
-
-      await updateWeatherData();
-      savePrefs();
-      showToast(`Clima cargado para ${city.name}`);
-    } catch (err) {
-      showToast('Error al conectar con el servicio de clima');
-    }
-  }
-
-  async function updateWeatherData() {
-    if (!currentCityData) return;
-    try {
-      const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${currentCityData.lat}&longitude=${currentCityData.lon}&current_weather=true`);
-      const weatherData = await weatherRes.json();
-
-      if (weatherData.current_weather) {
-        const temp = Math.round(weatherData.current_weather.temperature);
-        currentWeatherCode = weatherData.current_weather.weathercode;
-        
-        isCurrentDay = weatherData.current_weather.is_day !== undefined 
-          ? Boolean(weatherData.current_weather.is_day) 
-          : (new Date().getHours() >= 6 && new Date().getHours() < 20);
-
-        const icon = getWeatherIcon(currentWeatherCode, isCurrentDay);
-
-        weatherDiv.textContent = `${icon} ${currentCityData.name} ${temp}°C`;
-        weatherDiv.style.display = 'block';
-      }
-    } catch (err) {
-      console.warn('No se pudo actualizar el clima:', err);
-    }
-  }
-
-  function getAudioContext() {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
-    return audioCtx;
-  }
-
-  function playCasioBeep(freq = 2048, duration = 0.08) {
-    try {
-      const ctx = getAudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(freq, ctx.currentTime);
-
-      gain.gain.setValueAtTime(0.15, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start();
-      osc.stop(ctx.currentTime + duration);
-    } catch(e) {}
-  }
-
-  function playCasioDoubleBeep() {
-    playCasioBeep(2048, 0.06);
-    setTimeout(() => playCasioBeep(2048, 0.06), 100);
-  }
-
-  function showToast(message) {
-    toast.textContent = message;
-    toast.classList.add('show');
-    setTimeout(() => { toast.classList.remove('show'); }, 3500);
-  }
-
-  async function requestWakeLock() {
-    try {
-      if ('wakeLock' in navigator) {
-        wakeLock = await navigator.wakeLock.request('screen');
-      }
-    } catch (err) {}
-  }
-
-  document.addEventListener('visibilitychange', async () => {
-    if (wakeLock !== null && document.visibilityState === 'visible') {
-      await requestWakeLock();
-    }
-  });
-
-  document.addEventListener('click', () => {
-    getAudioContext();
-    if (!wakeLock) requestWakeLock();
-  }, { once: true });
-
-  (function loadPrefs(){
-    const saved = localStorage.getItem('clock_prefs');
-    if(!saved) return;
-    const prefs = JSON.parse(saved);
-    if(prefs.counterToggle) {
-      counterToggleSel.value = prefs.counterToggle;
-      visitCounter.style.display = prefs.counterToggle === 'on' ? 'block' : 'none';
-    }
-    if(prefs.wallpaperToggle) wallpaperToggleSel.value = prefs.wallpaperToggle;
-    if(prefs.suggestionToggle) suggestionToggleSel.value = prefs.suggestionToggle;
-    
-    if(prefs.format) formatSel.value = prefs.format;
-    if(prefs.brightness) {
-      brightnessSel.value = prefs.brightness;
-      document.documentElement.style.setProperty('--clock-brightness', prefs.brightness);
-    }
-    if(prefs.nightModeAuto) nightModeAutoSel.value = prefs.nightModeAuto;
-    if(prefs.size) {
-      sizeSel.value = prefs.size;
-      applySize();
-    }
-    if(prefs.font) { fontSel.value = prefs.font; document.body.style.fontFamily = prefs.font; }
-    if(prefs.colorMode) { colorModeSel.value = prefs.colorMode; }
-    
-    if(colorModeSel.value === 'auto') {
-      applyColorForHour(new Date().getHours());
-    } else if(prefs.color) { 
-      colorSel.value = prefs.color; 
-      document.body.style.color = prefs.color; 
-      document.documentElement.style.setProperty('--accent-color', prefs.color); 
-    }
-
-    if(prefs.bg) { 
-      bgSel.value = prefs.bg; 
-      document.body.style.backgroundColor = prefs.bg; 
-      document.documentElement.style.setProperty('--bg-color', prefs.bg); 
-    }
-    if(prefs.alarmTime) {
-      alarmInput.value = prefs.alarmTime;
-      alarmTime = prefs.alarmTime;
-      alarmActive = true;
-      updateAlarmUI();
-    }
-    if(prefs.cityData) {
-      currentCityData = prefs.cityData;
-      cityInput.value = currentCityData.name;
-      updateWeatherData();
-    }
-  })();
-
-  function savePrefs(){
-    const prefs = {
-      counterToggle: counterToggleSel.value,
-      wallpaperToggle: wallpaperToggleSel.value,
-      suggestionToggle: suggestionToggleSel.value,
-      format: formatSel.value,
-      brightness: brightnessSel.value,
-      nightModeAuto: nightModeAutoSel.value,
-      size: sizeSel.value,
-      font: fontSel.value,
-      colorMode: colorModeSel.value,
-      color: colorSel.value,
-      bg: bgSel.value,
-      alarmTime: alarmActive ? alarmTime : null,
-      cityData: currentCityData
-    };
-    localStorage.setItem('clock_prefs', JSON.stringify(prefs));
-  }
-
-  function two(n){ return String(n).padStart(2,'0'); }
-
-  function updateClock(){
-    const now = new Date();
-    let h = now.getHours();
-    const m = now.getMinutes();
-    const s = now.getSeconds();
-
-    if (nightModeAutoSel.value === 'on') {
-      if (h >= 23 || h < 7) {
-        document.documentElement.style.setProperty('--clock-brightness', '0.3');
-        document.body.style.color = '#ff3333';
-      } else {
-        document.documentElement.style.setProperty('--clock-brightness', brightnessSel.value);
-        if (colorModeSel.value === 'auto') {
-          applyColorForHour(h);
-        } else {
-          document.body.style.color = colorSel.value;
-        }
-      }
-    }
-
-    if (screenModeSel.value === 'clock') {
-      let suffix = '';
-      
-      if (h !== lastHour && m === 0 && s <= 1) {
-        playCasioBeep(2048, 0.15);
-        applyColorForHour(h);
-        
-        if (currentCityData) {
-          updateWeatherData().then(() => {
-            triggerHourlyEvents();
-          });
-        } else {
-          triggerHourlyEvents();
-        }
-        
-        lastHour = h;
-      }
-
-      if (formatSel.value === '12') {
-        suffix = h >= 12 ? ' PM' : ' AM';
-        h = h % 12 || 12;
-      }
-      clock.textContent = `${two(h)}:${two(m)}:${two(s)}${suffix}`;
-
-      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      date.textContent = now.toLocaleDateString('es-ES', options);
-      if (currentCityData) weatherDiv.style.display = 'block';
-    } 
-    else if (screenModeSel.value === 'stopwatch') {
-      const swH = Math.floor(stopwatchTime / 3600);
-      const swM = Math.floor((stopwatchTime % 3600) / 60);
-      const swS = stopwatchTime % 60;
-      clock.textContent = `${two(swH)}:${two(swM)}:${two(swS)}`;
-      date.textContent = "CRONÓMETRO";
-      weatherDiv.style.display = 'none';
-    } 
-    else if (screenModeSel.value === 'timer') {
-      const tmH = Math.floor(timerTime / 3600);
-      const tmM = Math.floor((timerTime % 3600) / 60);
-      const tmS = timerTime % 60;
-      clock.textContent = `${two(tmH)}:${two(tmM)}:${two(tmS)}`;
-      date.textContent = "TEMPORIZADOR";
-      weatherDiv.style.display = 'none';
-    }
-
-    if (alarmActive && alarmTime && !isRinging) {
-      const currentHM = `${two(now.getHours())}:${two(now.getMinutes())}`;
-      if (currentHM === alarmTime) {
-        triggerAlarm();
-      }
-    }
-  }
-
-  screenModeSel.addEventListener('change', () => {
-    timerControls.style.display = screenModeSel.value === 'timer' ? 'flex' : 'none';
-    stopwatchControls.style.display = screenModeSel.value === 'stopwatch' ? 'flex' : 'none';
-    updateClock();
-  });
-
-  startStopwatchBtn.addEventListener('click', () => {
-    if (stopwatchInterval) {
-      clearInterval(stopwatchInterval);
-      stopwatchInterval = null;
-      startStopwatchBtn.textContent = '▶️ Iniciar';
-    } else {
-      stopwatchInterval = setInterval(() => {
-        stopwatchTime++;
-        updateClock();
-      }, 1000);
-      startStopwatchBtn.textContent = '⏸️ Pausar';
-    }
-  });
-
-  resetStopwatchBtn.addEventListener('click', () => {
-    clearInterval(stopwatchInterval);
-    stopwatchInterval = null;
-    stopwatchTime = 0;
-    startStopwatchBtn.textContent = '▶️ Iniciar';
-    updateClock();
-  });
-
-  startTimerBtn.addEventListener('click', () => {
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-      startTimerBtn.textContent = '▶️ Iniciar';
-    } else {
-      if (timerTime <= 0) {
-        timerTime = (parseInt(timerMinutesInput.value, 10) || 5) * 60;
-      }
-      timerInterval = setInterval(() => {
-        if (timerTime > 0) {
-          timerTime--;
-          updateClock();
-        } else {
-          clearInterval(timerInterval);
-          timerInterval = null;
-          startTimerBtn.textContent = '▶️ Iniciar';
-          triggerAlarm();
-          showToast('⏳ ¡Tiempo finalizado!');
-        }
-      }, 1000);
-      startTimerBtn.textContent = '⏸️ Pausar';
-    }
-  });
-
-  resetTimerBtn.addEventListener('click', () => {
-    clearInterval(timerInterval);
-    timerInterval = null;
-    timerTime = (parseInt(timerMinutesInput.value, 10) || 5) * 60;
-    startTimerBtn.textContent = '▶️ Iniciar';
-    updateClock();
-  });
-
-  counterToggleSel.addEventListener('change', () => {
-    visitCounter.style.display = counterToggleSel.value === 'on' ? 'block' : 'none';
-    savePrefs();
-  });
-
-  function updateAlarmUI() {
-    if (alarmActive && alarmTime) {
-      alarmIndicatorTime.textContent = alarmTime;
-      alarmIndicator.style.display = 'flex';
-    } else {
-      alarmIndicator.style.display = 'none';
-    }
-  }
-
-  function triggerAlarm() {
-    isRinging = true;
-    playCasioDoubleBeep();
-    alarmInterval = setInterval(playCasioDoubleBeep, 1000);
-    
-    if ('vibrate' in navigator) {
-      navigator.vibrate([100, 50, 100]);
-      vibrationInterval = setInterval(() => {
-        navigator.vibrate([100, 50, 100]);
-      }, 1000);
-    }
-
-    stopAlarmBtn.style.display = 'block';
-  }
-
-  stopAlarmBtn.addEventListener('click', () => {
-    if (alarmInterval) {
-      clearInterval(alarmInterval);
-      alarmInterval = null;
-    }
-    if (vibrationInterval) {
-      clearInterval(vibrationInterval);
-      vibrationInterval = null;
-    }
-    if ('vibrate' in navigator) navigator.vibrate(0);
-    
-    stopAlarmBtn.style.display = 'none';
-    isRinging = false;
-    alarmActive = false; 
-    updateAlarmUI();
-    savePrefs();
-    showToast('Alarma desactivada');
-  });
-
-  function applySize(){
-    const pct = parseInt(sizeSel.value, 10) || 100;
-    document.documentElement.style.setProperty('--size-factor', pct / 100);
-  }
-
-  function toggleControls() {
-    if (controls.style.display === 'flex') {
-      hideControls();
-    } else {
-      showControls();
-    }
-  }
-
-  function showControls(){
-    controls.style.display = 'flex';
-    resetHideTimer();
-  }
-
-  function hideControls() {
-    controls.style.display = 'none';
-    clearTimeout(hideTimeout);
-  }
-
-  function resetHideTimer(){
-    clearTimeout(hideTimeout);
-    hideTimeout = setTimeout(()=>{
-      if (!controls.matches(':hover') && !controls.contains(document.activeElement)) {
-        hideControls();
-      } else {
-        resetHideTimer();
-      }
-    }, 8000);
-  }
-
-  castToggle.addEventListener('click', castToSmartTV);
-  shareToggle.addEventListener('click', shareClock);
-
-  settingsToggle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toggleControls();
-  });
-  clockContainer.addEventListener('click', showControls);
-
-  infoToggle.addEventListener('click', () => {
-    infoModal.style.display = 'flex';
-  });
-
-  closeInfoBtn.addEventListener('click', () => {
-    infoModal.style.display = 'none';
-  });
-
-  infoModal.addEventListener('click', (e) => {
-    if (e.target === infoModal) infoModal.style.display = 'none';
-  });
-
-  searchCityBtn.addEventListener('click', () => {
-    if (cityInput.value.trim() !== '') {
-      fetchCityWeather(cityInput.value.trim());
-    }
-  });
-
-  cityInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && cityInput.value.trim() !== '') {
-      fetchCityWeather(cityInput.value.trim());
-    }
-  });
-
-  controls.addEventListener('mouseenter', resetHideTimer);
-  controls.addEventListener('input', resetHideTimer);
-  controls.addEventListener('change', resetHideTimer);
-  controls.addEventListener('focusin', () => clearTimeout(hideTimeout));
-  controls.addEventListener('focusout', resetHideTimer);
-  
-  document.addEventListener('click', (e) => {
-    if (!controls.contains(e.target) && e.target !== settingsToggle && !clockContainer.contains(e.target)) {
-      hideControls();
-    }
-  });
-
-  wallpaperToggleSel.addEventListener('change', savePrefs);
-  suggestionToggleSel.addEventListener('change', savePrefs);
-  formatSel.addEventListener('change', ()=>{ updateClock(); savePrefs(); });
-  
-  brightnessSel.addEventListener('change', ()=>{
-    document.documentElement.style.setProperty('--clock-brightness', brightnessSel.value);
-    savePrefs();
-  });
-
-  nightModeAutoSel.addEventListener('change', savePrefs);
-  sizeSel.addEventListener('change', ()=>{ applySize(); savePrefs(); });
-  fontSel.addEventListener('change', ()=>{ document.body.style.fontFamily = fontSel.value; savePrefs(); });
-  
-  colorModeSel.addEventListener('change', ()=>{
-    if (colorModeSel.value === 'auto') {
-      applyColorForHour(new Date().getHours());
-      showToast('Color automático activado (cada 1h)');
-    } else {
-      document.body.style.color = colorSel.value;
-      document.documentElement.style.setProperty('--accent-color', colorSel.value);
-      showToast('Color manual activado');
-    }
-    savePrefs();
-  });
-
-  colorSel.addEventListener('input', ()=>{ 
-    colorModeSel.value = 'manual';
-    document.body.style.color = colorSel.value; 
-    document.documentElement.style.setProperty('--accent-color', colorSel.value);
-    savePrefs(); 
-  });
-  
-  bgSel.addEventListener('input', ()=>{ 
-    document.body.style.backgroundColor = bgSel.value; 
-    document.documentElement.style.setProperty('--bg-color', bgSel.value);
-    savePrefs(); 
-  });
-
-  setAlarmBtn.addEventListener('click', ()=>{
-    if (alarmInput.value) {
-      alarmTime = alarmInput.value;
-      alarmActive = true;
-      updateAlarmUI();
-      savePrefs();
-      showToast('Alarma Casio activada para las ' + alarmTime);
-    } else {
-      showToast('Selecciona una hora válida');
-    }
-  });
-  
-  clearAlarmBtn.addEventListener('click', ()=>{
-    alarmTime = null;
-    alarmActive = false;
-    isRinging = false;
-    if (alarmInterval) {
-      clearInterval(alarmInterval);
-      alarmInterval = null;
-    }
-    if (vibrationInterval) {
-      clearInterval(vibrationInterval);
-      vibrationInterval = null;
-    }
-    stopAlarmBtn.style.display = 'none';
-    updateAlarmUI();
-    savePrefs();
-    showToast('Alarma desactivada');
-  });
-
-  fullscreenBtn.addEventListener('click', ()=>{
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(()=>{});
-    } else {
-      document.exitFullscreen();
-    }
-  });
-
-  initVisitCounter();
-  updateClock();
-  setInterval(updateClock, 1000);
+  // Elementos UI
+  const wallpaperOverlay = document.getElementById('wallpaperOverlay');
+  const clockContainer = document.getElementById('clockContainer');
+  const clock = document.getElementById('clock');
+  const date = document.getElementById('date');
+  const weatherDiv = document.getElementById('weather');
+  const alarmIndicator = document.getElementById('alarmIndicator');
+  const alarmIndicatorTime = document.getElementById('alarmIndicatorTime');
+  const weatherSuggestion = document.getElementById('weatherSuggestion');
+  const visitCounter = document.getElementById('visitCounter');
+  const controls = document.getElementById('controls');
+  const settingsToggle = document.getElementById('settingsToggle');
+  const infoToggle = document.getElementById('infoToggle');
+  const shareToggle = document.getElementById('shareToggle');
+  const castToggle = document.getElementById('castToggle');
+  const infoModal = document.getElementById('infoModal');
+  const closeInfoBtn = document.getElementById('closeInfoBtn');
+  
+  const screenModeSel = document.getElementById('screenMode');
+  const timerControls = document.getElementById('timerControls');
+  const stopwatchControls = document.getElementById('stopwatchControls');
+  const timerMinutesInput = document.getElementById('timerMinutes');
+  const startTimerBtn = document.getElementById('startTimerBtn');
+  const resetTimerBtn = document.getElementById('resetTimerBtn');
+  const startStopwatchBtn = document.getElementById('startStopwatchBtn');
+  const resetStopwatchBtn = document.getElementById('resetStopwatchBtn');
+
+  const counterToggleSel = document.getElementById('counterToggle');
+  const wallpaperToggleSel = document.getElementById('wallpaperToggle');
+  const suggestionToggleSel = document.getElementById('suggestionToggle');
+  const formatSel = document.getElementById('format');
+  const brightnessSel = document.getElementById('brightness');
+  const nightModeAutoSel = document.getElementById('nightModeAuto');
+  const sizeSel = document.getElementById('size');
+  const fontSel = document.getElementById('font');
+  const colorModeSel = document.getElementById('colorMode');
+  const colorSel = document.getElementById('color');
+  const bgSel = document.getElementById('bgcolor');
+  const cityInput = document.getElementById('cityInput');
+  const searchCityBtn = document.getElementById('searchCityBtn');
+  const alarmInput = document.getElementById('alarmTime');
+  const setAlarmBtn = document.getElementById('setAlarm');
+  const clearAlarmBtn = document.getElementById('clearAlarm');
+  const stopAlarmBtn = document.getElementById('stopAlarmBtn');
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+  const toast = document.getElementById('toast');
+
+  // Estado del Reloj y Funciones
+  let alarmTime = null;
+  let alarmActive = false;
+  let isRinging = false;
+  let hideTimeout = null;
+  let lastHour = new Date().getHours();
+  let wakeLock = null;
+  let vibrationInterval = null;
+  let alarmInterval = null;
+  let audioCtx = null;
+  let currentCityData = null;
+  let currentWeatherCode = null;
+  let isCurrentDay = true;
+
+  // Estado Cronómetro y Temporizador
+  let stopwatchTime = 0;
+  let stopwatchInterval = null;
+  let timerTime = 0;
+  let timerInterval = null;
+
+  // Lógica del Contador Global de Visitas (CounterAPI v2)
+  async function initVisitCounter() {
+    try {
+      const siteKey = "lpaz-reloj-minimalista-2026";
+      const res = await fetch(`https://api.counterapi.dev/v1/reloj_lpaz/${siteKey}/up`);
+      const data = await res.json();
+      
+      if (data && data.count !== undefined) {
+        visitCounter.textContent = `👁️ Visitas: ${data.count.toLocaleString('es-ES')}`;
+      } else {
+        fetchReadCounter();
+      }
+    } catch (err) {
+      fetchReadCounter();
+    }
+  }
+
+  async function fetchReadCounter() {
+    try {
+      const siteKey = "lpaz-reloj-minimalista-2026";
+      const res = await fetch(`https://api.counterapi.dev/v1/reloj_lpaz/${siteKey}`);
+      const data = await res.json();
+      if (data && data.count !== undefined) {
+        visitCounter.textContent = `👁️ Visitas: ${data.count.toLocaleString('es-ES')}`;
+      } else {
+        visitCounter.textContent = `👁️ Visitas: --`;
+      }
+    } catch (e) {
+      visitCounter.textContent = `👁️ Visitas: --`;
+    }
+  }
+
+  // Colección de Wallpapers por clima
+  const weatherWallpapers = {
+    clearDay: "https://images.unsplash.com/photo-1601297183305-6df142704ea2?auto=format&fit=crop&w=1920&q=80",
+    clearNight: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=1920&q=80",
+    clouds: "https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=1920&q=80",
+    rain: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=1920&q=80",
+    snow: "https://images.unsplash.com/photo-1491002052546-bf38f186af56?auto=format&fit=crop&w=1920&q=80",
+    thunder: "https://images.unsplash.com/photo-1605727216801-e27ce1d0cc28?auto=format&fit=crop&w=1920&q=80",
+    default: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80"
+  };
+
+  function getWallpaperForWeather(code, isDay) {
+    if (code === 0) return isDay ? weatherWallpapers.clearDay : weatherWallpapers.clearNight;
+    if (code >= 1 && code <= 3) return weatherWallpapers.clouds;
+    if (code >= 45 && code <= 67) return weatherWallpapers.rain;
+    if (code >= 71 && code <= 77) return weatherWallpapers.snow;
+    if (code >= 80 && code <= 82) return weatherWallpapers.rain;
+    if (code >= 95) return weatherWallpapers.thunder;
+    return isDay ? weatherWallpapers.clearDay : weatherWallpapers.clearNight;
+  }
+
+  // Generador de frases según mapa de códigos WMO exactos de Open-Meteo
+  function getWeatherSuggestion(code, isDay) {
+    if (code === null || code === undefined) {
+      return "¡Bienvenido! Que tengas una excelente hora. 🌟";
+    }
+
+    // 0: Cielo despejado
+    if (code === 0) {
+      return isDay 
+        ? "¡Día soleado y despejado! 😎 Recuerda usar gafas y bloqueador solar factor 30." 
+        : "Noche totalmente despejada, ideal para salir a contemplar las estrellas. 🌌";
+    }
+    
+    // 1, 2, 3: Algo nublado / Cubierto
+    if (code >= 1 && code <= 3) {
+      return isDay 
+        ? "El clima está algo nublado pero agradable. ⛅ ¡Buen momento para dar una caminata!" 
+        : "Noche parcialmente nublada y fresca. 🌙☁️ Ideal para descansar.";
+    }
+      
+    // 45, 48: Niebla
+    if (code === 45 || code === 48) {
+      return "Hay niebla en la ciudad. 🌫️ Conduce con mucha precaución y mantén tus luces encendidas.";
+    }
+
+    // 51 a 67: Lloviznas y lluvias
+    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
+      return "Pronóstico de lluvia. ☔ ¡No olvides llevar tu paraguas o un buen impermeable!";
+    }
+    
+    // 71 a 77: Nieve
+    if (code >= 71 && code <= 77) {
+      return "¡Está cayendo nieve! ❄️ Abrígate muy bien y disfruta de una bebida caliente. ☕";
+    }
+    
+    // 95 a 99: Tormentas eléctricas
+    if (code >= 95) {
+      return "Alerta de tormenta eléctrica. ⛈️ Procura mantenerte resguardado en un lugar seguro. 🏠";
+    }
+    
+    return "¡Mantente preparado y disfruta de esta nueva hora! 💧";
+  }
+
+  // Activador de Eventos de Cambio de Hora (Fondo + Texto)
+  function triggerHourlyEvents() {
+    if (wallpaperToggleSel.value === 'on') {
+      const imageUrl = getWallpaperForWeather(currentWeatherCode, isCurrentDay);
+      wallpaperOverlay.style.backgroundImage = `url('${imageUrl}')`;
+      wallpaperOverlay.style.opacity = '1';
+    }
+
+    if (suggestionToggleSel.value === 'on') {
+      weatherSuggestion.textContent = getWeatherSuggestion(currentWeatherCode, isCurrentDay);
+      weatherSuggestion.style.opacity = '1';
+    }
+
+    // Ocultar suavemente después de 1 minuto (60000ms)
+    setTimeout(() => {
+      wallpaperOverlay.style.opacity = '0';
+      weatherSuggestion.style.opacity = '0';
+    }, 60000);
+  }
+
+  // Paleta de colores para cambio automático
+  const hourlyColors = [
+    "#00ff00", "#00ffff", "#ff00ff", "#ffff00", "#ff8800", "#0088ff",
+    "#ff3366", "#ffffff", "#a6ff00", "#00ffaa", "#ff99cc", "#ffcc00",
+    "#00e5ff", "#ff0055", "#76ff03", "#d500f9", "#ffab00", "#1de9b6",
+    "#ff3d00", "#00b0ff", "#f4ff81", "#e040fb", "#64ffda", "#ff6e40"
+  ];
+
+  // Protección Anti Burn-In para OLED/TVs
+  setInterval(() => {
+    const shiftX = (Math.random() - 0.5) * 8;
+    const shiftY = (Math.random() - 0.5) * 8;
+    clockContainer.style.transform = `translate(${shiftX}px, ${shiftY}px)`;
+  }, 600000);
+
+  // Transmisión a Smart TV
+  async function castToSmartTV() {
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    if ('PresentationRequest' in window && !isMobile) {
+      try {
+        const presentationRequest = new PresentationRequest([window.location.href]);
+        await presentationRequest.start();
+        showToast('📺 Conectando con Smart TV...');
+      } catch (err) {
+        if (err.name !== 'NotFoundError' && err.name !== 'NotAllowedError') {
+          showToast('No se encontraron Smart TVs cercanas');
+        }
+      }
+    } else if (isMobile) {
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      if (isAndroid) {
+        showToast('📱 Toca los 3 puntos (⋮) del navegador y elige "Transmitir"');
+      } else {
+        showToast('📱 Usa "Duplicar Pantalla" desde el Centro de Control de tu iPhone');
+      }
+    } else {
+      showToast('Usa la opción "Enviar/Cast" de tu navegador');
+    }
+  }
+
+  function applyColorForHour(hour) {
+    if (colorModeSel.value === 'auto') {
+      const autoColor = hourlyColors[hour % 24];
+      document.body.style.color = autoColor;
+      document.documentElement.style.setProperty('--accent-color', autoColor);
+      colorSel.value = autoColor;
+    }
+  }
+
+  async function shareClock() {
+    const shareData = {
+      title: 'Reloj Minimalista por LPaz',
+      text: '¡Mira este Reloj Minimalista Pro configurable para PC y móvil!',
+      url: window.location.href
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          copyToClipboard();
+        }
+      }
+    } else {
+      copyToClipboard();
+    }
+  }
+
+  function copyToClipboard() {
+    navigator.clipboard.writeText(window.location.href)
+      .then(() => showToast('📋 Enlace copiado al portapapeles'))
+      .catch(() => showToast('Error al copiar enlace'));
+  }
+
+  function getWeatherIcon(code, isDay) {
+    if (code === 0) return isDay ? '☀️' : '🌙';
+    if (code >= 1 && code <= 3) return isDay ? '⛅' : '☁️';
+    if (code === 45 || code === 48) return '🌫️';
+    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return '🌧️';
+    if (code >= 71 && code <= 77) return '❄️';
+    if (code >= 95) return '⛈️';
+    return isDay ? '☀️' : '🌙';
+  }
+
+  async function fetchCityWeather(cityName) {
+    try {
+      const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=es&format=json`);
+      const geoData = await geoRes.json();
+
+      if (!geoData.results || geoData.results.length === 0) {
+        showToast('Ciudad no encontrada');
+        return;
+      }
+
+      const city = geoData.results[0];
+      currentCityData = {
+        name: city.name,
+        lat: city.latitude,
+        lon: city.longitude
+      };
+
+      await updateWeatherData();
+      savePrefs();
+      showToast(`Clima cargado para ${city.name}`);
+    } catch (err) {
+      showToast('Error al conectar con el servicio de clima');
+    }
+  }
+
+  async function updateWeatherData() {
+    if (!currentCityData) return;
+    try {
+      const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${currentCityData.lat}&longitude=${currentCityData.lon}&current_weather=true`);
+      const weatherData = await weatherRes.json();
+
+      if (weatherData.current_weather) {
+        const temp = Math.round(weatherData.current_weather.temperature);
+        currentWeatherCode = weatherData.current_weather.weathercode;
+        
+        isCurrentDay = weatherData.current_weather.is_day !== undefined 
+          ? Boolean(weatherData.current_weather.is_day) 
+          : (new Date().getHours() >= 6 && new Date().getHours() < 20);
+
+        const icon = getWeatherIcon(currentWeatherCode, isCurrentDay);
+
+        weatherDiv.textContent = `${icon} ${currentCityData.name} ${temp}°C`;
+        weatherDiv.style.display = 'block';
+      }
+    } catch (err) {
+      console.warn('No se pudo actualizar el clima:', err);
+    }
+  }
+
+  function getAudioContext() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    return audioCtx;
+  }
+
+  function playCasioBeep(freq = 2048, duration = 0.08) {
+    try {
+      const ctx = getAudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch(e) {}
+  }
+
+  function playCasioDoubleBeep() {
+    playCasioBeep(2048, 0.06);
+    setTimeout(() => playCasioBeep(2048, 0.06), 100);
+  }
+
+  function showToast(message) {
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => { toast.classList.remove('show'); }, 3500);
+  }
+
+  async function requestWakeLock() {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLock = await navigator.wakeLock.request('screen');
+      }
+    } catch (err) {}
+  }
+
+  document.addEventListener('visibilitychange', async () => {
+    if (wakeLock !== null && document.visibilityState === 'visible') {
+      await requestWakeLock();
+    }
+  });
+
+  document.addEventListener('click', () => {
+    getAudioContext();
+    if (!wakeLock) requestWakeLock();
+  }, { once: true });
+
+  (function loadPrefs(){
+    const saved = localStorage.getItem('clock_prefs');
+    if(!saved) return;
+    const prefs = JSON.parse(saved);
+    if(prefs.counterToggle) {
+      counterToggleSel.value = prefs.counterToggle;
+      visitCounter.style.display = prefs.counterToggle === 'on' ? 'block' : 'none';
+    }
+    if(prefs.wallpaperToggle) wallpaperToggleSel.value = prefs.wallpaperToggle;
+    if(prefs.suggestionToggle) suggestionToggleSel.value = prefs.suggestionToggle;
+    
+    if(prefs.format) formatSel.value = prefs.format;
+    if(prefs.brightness) {
+      brightnessSel.value = prefs.brightness;
+      document.documentElement.style.setProperty('--clock-brightness', prefs.brightness);
+    }
+    if(prefs.nightModeAuto) nightModeAutoSel.value = prefs.nightModeAuto;
+    if(prefs.size) {
+      sizeSel.value = prefs.size;
+      applySize();
+    }
+    if(prefs.font) { fontSel.value = prefs.font; document.body.style.fontFamily = prefs.font; }
+    if(prefs.colorMode) { colorModeSel.value = prefs.colorMode; }
+    
+    if(colorModeSel.value === 'auto') {
+      applyColorForHour(new Date().getHours());
+    } else if(prefs.color) { 
+      colorSel.value = prefs.color; 
+      document.body.style.color = prefs.color; 
+      document.documentElement.style.setProperty('--accent-color', prefs.color); 
+    }
+
+    if(prefs.bg) { 
+      bgSel.value = prefs.bg; 
+      document.body.style.backgroundColor = prefs.bg; 
+      document.documentElement.style.setProperty('--bg-color', prefs.bg); 
+    }
+    if(prefs.alarmTime) {
+      alarmInput.value = prefs.alarmTime;
+      alarmTime = prefs.alarmTime;
+      alarmActive = true;
+      updateAlarmUI();
+    }
+    if(prefs.cityData) {
+      currentCityData = prefs.cityData;
+      cityInput.value = currentCityData.name;
+      updateWeatherData();
+    }
+  })();
+
+  function savePrefs(){
+    const prefs = {
+      counterToggle: counterToggleSel.value,
+      wallpaperToggle: wallpaperToggleSel.value,
+      suggestionToggle: suggestionToggleSel.value,
+      format: formatSel.value,
+      brightness: brightnessSel.value,
+      nightModeAuto: nightModeAutoSel.value,
+      size: sizeSel.value,
+      font: fontSel.value,
+      colorMode: colorModeSel.value,
+      color: colorSel.value,
+      bg: bgSel.value,
+      alarmTime: alarmActive ? alarmTime : null,
+      cityData: currentCityData
+    };
+    localStorage.setItem('clock_prefs', JSON.stringify(prefs));
+  }
+
+  function two(n){ return String(n).padStart(2,'0'); }
+
+  // Actualizador Principal
+  function updateClock(){
+    const now = new Date();
+    let h = now.getHours();
+    const m = now.getMinutes();
+    const s = now.getSeconds();
+
+    // Modo Noche Automático (23:00 - 07:00 hs)
+    if (nightModeAutoSel.value === 'on') {
+      if (h >= 23 || h < 7) {
+        document.documentElement.style.setProperty('--clock-brightness', '0.3');
+        document.body.style.color = '#ff3333';
+      } else {
+        document.documentElement.style.setProperty('--clock-brightness', brightnessSel.value);
+        if (colorModeSel.value === 'auto') {
+          applyColorForHour(h);
+        } else {
+          document.body.style.color = colorSel.value;
+        }
+      }
+    }
+
+    if (screenModeSel.value === 'clock') {
+      let suffix = '';
+      
+      // Cambio de hora exacto (00:00:00)
+      if (h !== lastHour && m === 0 && s <= 1) {
+        playCasioBeep(2048, 0.15);
+        applyColorForHour(h);
+        
+        // Actualizamos primero el clima y lanzamos los eventos asegurando que el dato sea fresco
+        if (currentCityData) {
+          updateWeatherData().then(() => {
+            triggerHourlyEvents();
+          });
+        } else {
+          triggerHourlyEvents();
+        }
+        
+        lastHour = h;
+      }
+
+      if (formatSel.value === '12') {
+        suffix = h >= 12 ? ' PM' : ' AM';
+        h = h % 12 || 12;
+      }
+      clock.textContent = `${two(h)}:${two(m)}:${two(s)}${suffix}`;
+
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      date.textContent = now.toLocaleDateString('es-ES', options);
+      if (currentCityData) weatherDiv.style.display = 'block';
+    } 
+    else if (screenModeSel.value === 'stopwatch') {
+      const swH = Math.floor(stopwatchTime / 3600);
+      const swM = Math.floor((stopwatchTime % 3600) / 60);
+      const swS = stopwatchTime % 60;
+      clock.textContent = `${two(swH)}:${two(swM)}:${two(swS)}`;
+      date.textContent = "CRONÓMETRO";
+      weatherDiv.style.display = 'none';
+    } 
+    else if (screenModeSel.value === 'timer') {
+      const tmH = Math.floor(timerTime / 3600);
+      const tmM = Math.floor((timerTime % 3600) / 60);
+      const tmS = timerTime % 60;
+      clock.textContent = `${two(tmH)}:${two(tmM)}:${two(tmS)}`;
+      date.textContent = "TEMPORIZADOR";
+      weatherDiv.style.display = 'none';
+    }
+
+    // Verificación de Alarma
+    if (alarmActive && alarmTime && !isRinging) {
+      const currentHM = `${two(now.getHours())}:${two(now.getMinutes())}`;
+      if (currentHM === alarmTime) {
+        triggerAlarm();
+      }
+    }
+  }
+
+  // Lógica de Cronómetro y Temporizador
+  screenModeSel.addEventListener('change', () => {
+    timerControls.style.display = screenModeSel.value === 'timer' ? 'flex' : 'none';
+    stopwatchControls.style.display = screenModeSel.value === 'stopwatch' ? 'flex' : 'none';
+    updateClock();
+  });
+
+  startStopwatchBtn.addEventListener('click', () => {
+    if (stopwatchInterval) {
+      clearInterval(stopwatchInterval);
+      stopwatchInterval = null;
+      startStopwatchBtn.textContent = '▶️ Iniciar';
+    } else {
+      stopwatchInterval = setInterval(() => {
+        stopwatchTime++;
+        updateClock();
+      }, 1000);
+      startStopwatchBtn.textContent = '⏸️ Pausar';
+    }
+  });
+
+  resetStopwatchBtn.addEventListener('click', () => {
+    clearInterval(stopwatchInterval);
+    stopwatchInterval = null;
+    stopwatchTime = 0;
+    startStopwatchBtn.textContent = '▶️ Iniciar';
+    updateClock();
+  });
+
+  startTimerBtn.addEventListener('click', () => {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      startTimerBtn.textContent = '▶️ Iniciar';
+    } else {
+      if (timerTime <= 0) {
+        timerTime = (parseInt(timerMinutesInput.value, 10) || 5) * 60;
+      }
+      timerInterval = setInterval(() => {
+        if (timerTime > 0) {
+          timerTime--;
+          updateClock();
+        } else {
+          clearInterval(timerInterval);
+          timerInterval = null;
+          startTimerBtn.textContent = '▶️ Iniciar';
+          triggerAlarm();
+          showToast('⏳ ¡Tiempo finalizado!');
+        }
+      }, 1000);
+      startTimerBtn.textContent = '⏸️ Pausar';
+    }
+  });
+
+  resetTimerBtn.addEventListener('click', () => {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    timerTime = (parseInt(timerMinutesInput.value, 10) || 5) * 60;
+    startTimerBtn.textContent = '▶️ Iniciar';
+    updateClock();
+  });
+
+  counterToggleSel.addEventListener('change', () => {
+    visitCounter.style.display = counterToggleSel.value === 'on' ? 'block' : 'none';
+    savePrefs();
+  });
+
+  function updateAlarmUI() {
+    if (alarmActive && alarmTime) {
+      alarmIndicatorTime.textContent = alarmTime;
+      alarmIndicator.style.display = 'flex';
+    } else {
+      alarmIndicator.style.display = 'none';
+    }
+  }
+
+  function triggerAlarm() {
+    isRinging = true;
+    playCasioDoubleBeep();
+    alarmInterval = setInterval(playCasioDoubleBeep, 1000);
+    
+    if ('vibrate' in navigator) {
+      navigator.vibrate([100, 50, 100]);
+      vibrationInterval = setInterval(() => {
+        navigator.vibrate([100, 50, 100]);
+      }, 1000);
+    }
+
+    stopAlarmBtn.style.display = 'block';
+  }
+
+  stopAlarmBtn.addEventListener('click', () => {
+    if (alarmInterval) {
+      clearInterval(alarmInterval);
+      alarmInterval = null;
+    }
+    if (vibrationInterval) {
+      clearInterval(vibrationInterval);
+      vibrationInterval = null;
+    }
+    if ('vibrate' in navigator) navigator.vibrate(0);
+    
+    stopAlarmBtn.style.display = 'none';
+    isRinging = false;
+    alarmActive = false; 
+    updateAlarmUI();
+    savePrefs();
+    showToast('Alarma desactivada');
+  });
+
+  function applySize(){
+    const pct = parseInt(sizeSel.value, 10) || 100;
+    document.documentElement.style.setProperty('--size-factor', pct / 100);
+  }
+
+  function toggleControls() {
+    if (controls.style.display === 'flex') {
+      hideControls();
+    } else {
+      showControls();
+    }
+  }
+
+  function showControls(){
+    controls.style.display = 'flex';
+    resetHideTimer();
+  }
+
+  function hideControls() {
+    controls.style.display = 'none';
+    clearTimeout(hideTimeout);
+  }
+
+  function resetHideTimer(){
+    clearTimeout(hideTimeout);
+    hideTimeout = setTimeout(()=>{
+      if (!controls.matches(':hover') && !controls.contains(document.activeElement)) {
+        hideControls();
+      } else {
+        resetHideTimer();
+      }
+    }, 8000);
+  }
+
+  castToggle.addEventListener('click', castToSmartTV);
+  shareToggle.addEventListener('click', shareClock);
+
+  settingsToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleControls();
+  });
+  clockContainer.addEventListener('click', showControls);
+
+  infoToggle.addEventListener('click', () => {
+    infoModal.style.display = 'flex';
+  });
+
+  closeInfoBtn.addEventListener('click', () => {
+    infoModal.style.display = 'none';
+  });
+
+  infoModal.addEventListener('click', (e) => {
+    if (e.target === infoModal) infoModal.style.display = 'none';
+  });
+
+  searchCityBtn.addEventListener('click', () => {
+    if (cityInput.value.trim() !== '') {
+      fetchCityWeather(cityInput.value.trim());
+    }
+  });
+
+  cityInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && cityInput.value.trim() !== '') {
+      fetchCityWeather(cityInput.value.trim());
+    }
+  });
+
+  controls.addEventListener('mouseenter', resetHideTimer);
+  controls.addEventListener('input', resetHideTimer);
+  controls.addEventListener('change', resetHideTimer);
+  controls.addEventListener('focusin', () => clearTimeout(hideTimeout));
+  controls.addEventListener('focusout', resetHideTimer);
+  
+  document.addEventListener('click', (e) => {
+    if (!controls.contains(e.target) && e.target !== settingsToggle && !clockContainer.contains(e.target)) {
+      hideControls();
+    }
+  });
+
+  wallpaperToggleSel.addEventListener('change', savePrefs);
+  suggestionToggleSel.addEventListener('change', savePrefs);
+  formatSel.addEventListener('change', ()=>{ updateClock(); savePrefs(); });
+  
+  brightnessSel.addEventListener('change', ()=>{
+    document.documentElement.style.setProperty('--clock-brightness', brightnessSel.value);
+    savePrefs();
+  });
+
+  nightModeAutoSel.addEventListener('change', savePrefs);
+  sizeSel.addEventListener('change', ()=>{ applySize(); savePrefs(); });
+  fontSel.addEventListener('change', ()=>{ document.body.style.fontFamily = fontSel.value; savePrefs(); });
+  
+  colorModeSel.addEventListener('change', ()=>{
+    if (colorModeSel.value === 'auto') {
+      applyColorForHour(new Date().getHours());
+      showToast('Color automático activado (cada 1h)');
+    } else {
+      document.body.style.color = colorSel.value;
+      document.documentElement.style.setProperty('--accent-color', colorSel.value);
+      showToast('Color manual activado');
+    }
+    savePrefs();
+  });
+
+  colorSel.addEventListener('input', ()=>{ 
+    colorModeSel.value = 'manual';
+    document.body.style.color = colorSel.value; 
+    document.documentElement.style.setProperty('--accent-color', colorSel.value);
+    savePrefs(); 
+  });
+  
+  bgSel.addEventListener('input', ()=>{ 
+    document.body.style.backgroundColor = bgSel.value; 
+    document.documentElement.style.setProperty('--bg-color', bgSel.value);
+    savePrefs(); 
+  });
+
+  setAlarmBtn.addEventListener('click', ()=>{
+    if (alarmInput.value) {
+      alarmTime = alarmInput.value;
+      alarmActive = true;
+      updateAlarmUI();
+      savePrefs();
+      showToast('Alarma Casio activada para las ' + alarmTime);
+    } else {
+      showToast('Selecciona una hora válida');
+    }
+  });
+  
+  clearAlarmBtn.addEventListener('click', ()=>{
+    alarmTime = null;
+    alarmActive = false;
+    isRinging = false;
+    if (alarmInterval) {
+      clearInterval(alarmInterval);
+      alarmInterval = null;
+    }
+    if (vibrationInterval) {
+      clearInterval(vibrationInterval);
+      vibrationInterval = null;
+    }
+    stopAlarmBtn.style.display = 'none';
+    updateAlarmUI();
+    savePrefs();
+    showToast('Alarma desactivada');
+  });
+
+  fullscreenBtn.addEventListener('click', ()=>{
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(()=>{});
+    } else {
+      document.exitFullscreen();
+    }
+  });
+
+  initVisitCounter();
+  updateClock();
+  setInterval(updateClock, 1000);
 </script>
-</body>
-</html>
