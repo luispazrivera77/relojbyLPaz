@@ -95,6 +95,28 @@
     animation: minutePulse 1s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
   }
 
+  /* Animación para el ciclo de color y pulso lento de la frase del alma */
+  @keyframes soulPhraseGlow {
+    0% {
+      filter: brightness(1);
+      color: var(--accent-color);
+      transform: scale(1);
+      text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+    }
+    50% {
+      filter: brightness(1.6);
+      color: #ffffff;
+      transform: scale(1.015);
+      text-shadow: 0 0 15px var(--accent-color), 0 0 25px rgba(255, 255, 255, 0.5);
+    }
+    100% {
+      filter: brightness(1);
+      color: var(--accent-color);
+      transform: scale(1);
+      text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+    }
+  }
+
   /* Escalado dinámico responsivo */
   #clock {
     font-size: calc(clamp(3.2rem, 14vw, 12rem) * var(--size-factor));
@@ -144,7 +166,7 @@
   /* Sugerencia de clima al cambio de hora */
   #weatherSuggestion {
     position: absolute;
-    bottom: 15%;
+    bottom: 18%;
     font-size: calc(clamp(1rem, 2.5vw, 1.6rem) * var(--size-factor));
     text-align: center;
     opacity: 0;
@@ -155,6 +177,28 @@
     z-index: 5;
     color: #ffffff;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  /* Frase de alimento para el alma en la parte baja */
+  #soulPhrase {
+    position: absolute;
+    bottom: 8%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: calc(clamp(0.9rem, 2.2vw, 1.4rem) * var(--size-factor));
+    text-align: center;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+    pointer-events: none;
+    max-width: 85%;
+    z-index: 5;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    letter-spacing: 0.5px;
+  }
+
+  #soulPhrase.active {
+    opacity: 0.95;
+    animation: soulPhraseGlow 6s ease-in-out infinite;
   }
 
   /* Contador de Visitas Minimalista */
@@ -343,6 +387,8 @@
 
 <div id="weatherSuggestion"></div>
 
+<div id="soulPhrase"></div>
+
 <div id="visitCounter" title="Contador de Visitas">👁️ Visitas: cargando...</div>
 
 <button id="stopAlarmBtn">🔕 Detener Alarma</button>
@@ -378,6 +424,12 @@
     <select id="counterToggle">
       <option value="on" selected>Visible</option>
       <option value="off">Oculto</option>
+    </select>
+  </label>
+  <label>Frases del Alma:
+    <select id="soulPhraseToggle">
+      <option value="on" selected>Activado</option>
+      <option value="off">Desactivado</option>
     </select>
   </label>
   <label>Sugerencia de Clima (1 min):
@@ -458,13 +510,13 @@
   <div class="modal-content">
     <h2>Reloj Minimalista por LPaz</h2>
     <ul>
-      <li><strong>💬 Sugerencia de Clima (1 min):</strong> Al cambiar la hora, el reloj te dará recomendaciones prácticas según cómo esté el tiempo afuera (Ej. usar bloqueador, llevar paraguas).</li>
+      <li><strong>✨ Frases para el Alma:</strong> Mensajes inspiradores que aparecen ordenadamente cada ~55 minutos acompañados de un pulso y un brillo dinámico.</li>
+      <li><strong>💬 Sugerencia de Clima (1 min):</strong> Al cambiar la hora, el reloj te dará recomendaciones prácticas según cómo esté el tiempo afuera.</li>
       <li><strong>👁️ Contador Global de Visitas:</strong> Muestra en tiempo real la cantidad acumulada de accesos.</li>
       <li><strong>🖼️ Wallpaper de Clima (1 min):</strong> Fondo con imágenes HD acorde al tiempo actual al cambiar de hora.</li>
       <li><strong>⏱️ Cronómetro y Temporizador:</strong> Funciones de tiempo integradas en el menú de ajustes.</li>
       <li><strong>🌙 Modo Noche Automático:</strong> Atenúa la pantalla y atenúa el tono entre las 23:00 y las 07:00 hs.</li>
       <li><strong>🛡️ Protección Anti Burn-In:</strong> Movimiento imperceptible de píxeles cada 10 min para proteger pantallas OLED.</li>
-      <li><strong>📺 Transmisión a Smart TV:</strong> Envía la vista del reloj a tu pantalla inteligente.</li>
     </ul>
 
     <div class="contact-section">
@@ -490,6 +542,7 @@
   const alarmIndicator = document.getElementById('alarmIndicator');
   const alarmIndicatorTime = document.getElementById('alarmIndicatorTime');
   const weatherSuggestion = document.getElementById('weatherSuggestion');
+  const soulPhrase = document.getElementById('soulPhrase');
   const visitCounter = document.getElementById('visitCounter');
   const controls = document.getElementById('controls');
   const settingsToggle = document.getElementById('settingsToggle');
@@ -509,6 +562,7 @@
   const resetStopwatchBtn = document.getElementById('resetStopwatchBtn');
 
   const counterToggleSel = document.getElementById('counterToggle');
+  const soulPhraseToggleSel = document.getElementById('soulPhraseToggle');
   const wallpaperToggleSel = document.getElementById('wallpaperToggle');
   const suggestionToggleSel = document.getElementById('suggestionToggle');
   const formatSel = document.getElementById('format');
@@ -527,6 +581,46 @@
   const stopAlarmBtn = document.getElementById('stopAlarmBtn');
   const fullscreenBtn = document.getElementById('fullscreenBtn');
   const toast = document.getElementById('toast');
+
+  // Listado de Frases para el Alma (26 frases en total -> aprox cada 55 min)
+  const soulPhrasesList = [
+    // 🌅 Para comenzar el día con claridad
+    "Hoy tienes permiso para avanzar lento, pero avanzar igual.",
+    "Lo que haces con intención, aunque sea pequeño, transforma tu día.",
+    "Respira: no todo debe resolverse ahora, pero sí puedes empezar ahora.",
+    "Tu mente es más fuerte que tus dudas.",
+    "La luz que buscas también está dentro de ti.",
+    // 🔥 Para levantar el ánimo cuando baja la motivación
+    "No subestimes lo que ya superaste; eso también es fuerza.",
+    "A veces el progreso se siente como caos, pero sigue siendo progreso.",
+    "Tu disciplina puede llevarte donde tu ánimo no siempre llega.",
+    "Lo difícil no te detiene: te está entrenando.",
+    "Hoy no necesitas ser perfecto, solo constante.",
+    // 🌿 Para encontrar calma en medio del ruido
+    "Lo que no puedes controlar, suéltalo. Lo que sí puedes, abrázalo.",
+    "La paz no siempre llega sola; a veces se construye con decisiones pequeñas.",
+    "Tu corazón sabe más de lo que parece cuando todo se acelera.",
+    "No estás atrasado: estás en tu propio ritmo.",
+    "La serenidad también es una forma de valentía.",
+    // 🌟 Para recordar tu valor
+    "Tu presencia cambia más cosas de las que imaginas.",
+    "No eres lo que te falta; eres lo que ya has logrado.",
+    "Tu historia tiene capítulos que aún no has escrito.",
+    "Mereces lo bueno que te está buscando.",
+    "Eres suficiente incluso en los días en que no lo sientes.",
+    // 💪 Para seguir adelante cuando el día se pone pesado
+    "Aguanta un poco más: lo que hoy pesa, mañana enseña.",
+    "No todo se resuelve hoy, pero hoy puedes dar un paso.",
+    "Tu resiliencia es más grande que este momento.",
+    "Lo que te cansa también te está formando.",
+    "Cada día difícil tiene un final; tú, en cambio, sigues.",
+    // 🌙 Para cerrar el día con gratitud
+    "Hoy hiciste más de lo que crees.",
+    "Descansa: mañana también te necesita lúcido.",
+    "Agradece lo pequeño; ahí se esconde lo grande.",
+    "Tu paz es una inversión, no un lujo.",
+    "Mañana será otro intento, otra oportunidad, otro comienzo."
+  ];
 
   // Estado del Reloj y Funciones
   let alarmTime = null;
@@ -602,7 +696,6 @@
     return isDay ? weatherWallpapers.clearDay : weatherWallpapers.clearNight;
   }
 
-  // Generador de frases según mapa de códigos WMO exactos de Open-Meteo
   function getWeatherSuggestion(code, isDay) {
     if (code === null || code === undefined) {
       return "¡Bienvenido! Que tengas una excelente hora. 🌟";
@@ -663,9 +756,25 @@
     const elementsToPulse = [clock, date, weatherDiv, alarmIndicator];
     elementsToPulse.forEach(el => {
       el.classList.remove('light-pulse');
-      void el.offsetWidth; // Forzar reflow para reiniciar la animación
+      void el.offsetWidth;
       el.classList.add('light-pulse');
     });
+
+    // Control de la aparición de la Frase del Alma cada ~55 minutos
+    if (soulPhraseToggleSel.value === 'on') {
+      const now = new Date();
+      const totalMinutesOfDay = now.getHours() * 60 + now.getMinutes();
+      const phraseIndex = Math.floor(totalMinutesOfDay / 55.38) % soulPhrasesList.length;
+      
+      soulPhrase.textContent = soulPhrasesList[phraseIndex];
+      soulPhrase.classList.add('light-pulse');
+      soulPhrase.classList.add('active');
+
+      setTimeout(() => {
+        soulPhrase.classList.remove('active');
+        soulPhrase.classList.remove('light-pulse');
+      }, 60000);
+    }
   }
 
   // Paleta de colores para cambio automático
@@ -871,6 +980,7 @@
       counterToggleSel.value = prefs.counterToggle;
       visitCounter.style.display = prefs.counterToggle === 'on' ? 'block' : 'none';
     }
+    if(prefs.soulPhraseToggle) soulPhraseToggleSel.value = prefs.soulPhraseToggle;
     if(prefs.wallpaperToggle) wallpaperToggleSel.value = prefs.wallpaperToggle;
     if(prefs.suggestionToggle) suggestionToggleSel.value = prefs.suggestionToggle;
     
@@ -916,6 +1026,7 @@
   function savePrefs(){
     const prefs = {
       counterToggle: counterToggleSel.value,
+      soulPhraseToggle: soulPhraseToggleSel.value,
       wallpaperToggle: wallpaperToggleSel.value,
       suggestionToggle: suggestionToggleSel.value,
       format: formatSel.value,
@@ -1083,6 +1194,8 @@
     visitCounter.style.display = counterToggleSel.value === 'on' ? 'block' : 'none';
     savePrefs();
   });
+
+  soulPhraseToggleSel.addEventListener('change', savePrefs);
 
   function updateAlarmUI() {
     if (alarmActive && alarmTime) {
