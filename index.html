@@ -524,15 +524,18 @@
   let timerTime = 0;
   let timerInterval = null;
 
-  // Lógica del Contador Global de Visitas (CounterAPI v2)
+  // Lógica actualizada del Contador Global de Visitas (CountAPI)
   async function initVisitCounter() {
     try {
-      const siteKey = "lpaz-reloj-minimalista-2026";
-      const res = await fetch(`https://api.counterapi.dev/v1/reloj_lpaz/${siteKey}/up`);
+      // Namespace y Key únicos para tu reloj
+      const namespace = "lpaz-reloj-minimalista-2026";
+      const key = "visitas";
+      
+      const res = await fetch(`https://api.countapi.xyz/hit/${namespace}/${key}`);
       const data = await res.json();
       
-      if (data && data.count !== undefined) {
-        visitCounter.textContent = `👁️ Visitas: ${data.count.toLocaleString('es-ES')}`;
+      if (data && data.value !== undefined) {
+        visitCounter.textContent = `👁️ Visitas: ${data.value.toLocaleString('es-ES')}`;
       } else {
         fetchReadCounter();
       }
@@ -543,11 +546,12 @@
 
   async function fetchReadCounter() {
     try {
-      const siteKey = "lpaz-reloj-minimalista-2026";
-      const res = await fetch(`https://api.counterapi.dev/v1/reloj_lpaz/${siteKey}`);
+      const namespace = "lpaz-reloj-minimalista-2026";
+      const key = "visitas";
+      const res = await fetch(`https://api.countapi.xyz/get/${namespace}/${key}`);
       const data = await res.json();
-      if (data && data.count !== undefined) {
-        visitCounter.textContent = `👁️ Visitas: ${data.count.toLocaleString('es-ES')}`;
+      if (data && data.value !== undefined) {
+        visitCounter.textContent = `👁️ Visitas: ${data.value.toLocaleString('es-ES')}`;
       } else {
         visitCounter.textContent = `👁️ Visitas: --`;
       }
@@ -583,36 +587,30 @@
       return "¡Bienvenido! Que tengas una excelente hora. 🌟";
     }
 
-    // 0: Cielo despejado
     if (code === 0) {
       return isDay 
         ? "¡Día soleado y despejado! 😎 Recuerda usar gafas y bloqueador solar factor 30." 
         : "Noche totalmente despejada, ideal para salir a contemplar las estrellas. 🌌";
     }
     
-    // 1, 2, 3: Algo nublado / Cubierto
     if (code >= 1 && code <= 3) {
       return isDay 
         ? "El clima está algo nublado pero agradable. ⛅ ¡Buen momento para dar una caminata!" 
         : "Noche parcialmente nublada y fresca. 🌙☁️ Ideal para descansar.";
     }
       
-    // 45, 48: Niebla
     if (code === 45 || code === 48) {
       return "Hay niebla en la ciudad. 🌫️ Conduce con mucha precaución y mantén tus luces encendidas.";
     }
 
-    // 51 a 67: Lloviznas y lluvias
     if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
       return "Pronóstico de lluvia. ☔ ¡No olvides llevar tu paraguas o un buen impermeable!";
     }
     
-    // 71 a 77: Nieve
     if (code >= 71 && code <= 77) {
       return "¡Está cayendo nieve! ❄️ Abrígate muy bien y disfruta de una bebida caliente. ☕";
     }
     
-    // 95 a 99: Tormentas eléctricas
     if (code >= 95) {
       return "Alerta de tormenta eléctrica. ⛈️ Procura mantenerte resguardado en un lugar seguro. 🏠";
     }
@@ -620,7 +618,6 @@
     return "¡Mantente preparado y disfruta de esta nueva hora! 💧";
   }
 
-  // Activador de Eventos de Cambio de Hora (Fondo + Texto)
   function triggerHourlyEvents() {
     if (wallpaperToggleSel.value === 'on') {
       const imageUrl = getWallpaperForWeather(currentWeatherCode, isCurrentDay);
@@ -633,14 +630,12 @@
       weatherSuggestion.style.opacity = '1';
     }
 
-    // Ocultar suavemente después de 1 minuto (60000ms)
     setTimeout(() => {
       wallpaperOverlay.style.opacity = '0';
       weatherSuggestion.style.opacity = '0';
     }, 60000);
   }
 
-  // Paleta de colores para cambio automático
   const hourlyColors = [
     "#00ff00", "#00ffff", "#ff00ff", "#ffff00", "#ff8800", "#0088ff",
     "#ff3366", "#ffffff", "#a6ff00", "#00ffaa", "#ff99cc", "#ffcc00",
@@ -648,14 +643,12 @@
     "#ff3d00", "#00b0ff", "#f4ff81", "#e040fb", "#64ffda", "#ff6e40"
   ];
 
-  // Protección Anti Burn-In para OLED/TVs
   setInterval(() => {
     const shiftX = (Math.random() - 0.5) * 8;
     const shiftY = (Math.random() - 0.5) * 8;
     clockContainer.style.transform = `translate(${shiftX}px, ${shiftY}px)`;
   }, 600000);
 
-  // Transmisión a Smart TV
   async function castToSmartTV() {
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -906,14 +899,12 @@
 
   function two(n){ return String(n).padStart(2,'0'); }
 
-  // Actualizador Principal
   function updateClock(){
     const now = new Date();
     let h = now.getHours();
     const m = now.getMinutes();
     const s = now.getSeconds();
 
-    // Modo Noche Automático (23:00 - 07:00 hs)
     if (nightModeAutoSel.value === 'on') {
       if (h >= 23 || h < 7) {
         document.documentElement.style.setProperty('--clock-brightness', '0.3');
@@ -931,12 +922,10 @@
     if (screenModeSel.value === 'clock') {
       let suffix = '';
       
-      // Cambio de hora exacto (00:00:00)
       if (h !== lastHour && m === 0 && s <= 1) {
         playCasioBeep(2048, 0.15);
         applyColorForHour(h);
         
-        // Actualizamos primero el clima y lanzamos los eventos asegurando que el dato sea fresco
         if (currentCityData) {
           updateWeatherData().then(() => {
             triggerHourlyEvents();
@@ -975,7 +964,6 @@
       weatherDiv.style.display = 'none';
     }
 
-    // Verificación de Alarma
     if (alarmActive && alarmTime && !isRinging) {
       const currentHM = `${two(now.getHours())}:${two(now.getMinutes())}`;
       if (currentHM === alarmTime) {
@@ -984,7 +972,6 @@
     }
   }
 
-  // Lógica de Cronómetro y Temporizador
   screenModeSel.addEventListener('change', () => {
     timerControls.style.display = screenModeSel.value === 'timer' ? 'flex' : 'none';
     stopwatchControls.style.display = screenModeSel.value === 'stopwatch' ? 'flex' : 'none';
@@ -1253,6 +1240,5 @@
   updateClock();
   setInterval(updateClock, 1000);
 </script>
-
 </body>
 </html>
