@@ -72,6 +72,29 @@
     z-index: 2;
   }
 
+  /* Animación de pulso de luz en el cambio de minuto */
+  @keyframes minutePulse {
+    0% {
+      text-shadow: 0 0 2px var(--accent-color), 0 0 5px var(--accent-color);
+      filter: brightness(1);
+      transform: scale(1);
+    }
+    30% {
+      text-shadow: 0 0 20px #ffffff, 0 0 40px var(--accent-color), 0 0 60px var(--accent-color);
+      filter: brightness(2.2);
+      transform: scale(1.02);
+    }
+    100% {
+      text-shadow: none;
+      filter: brightness(1);
+      transform: scale(1);
+    }
+  }
+
+  .light-pulse {
+    animation: minutePulse 1s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+  }
+
   /* Escalado dinámico responsivo */
   #clock {
     font-size: calc(clamp(3.2rem, 14vw, 12rem) * var(--size-factor));
@@ -79,6 +102,7 @@
     text-align: center;
     line-height: 1;
     white-space: nowrap;
+    transition: text-shadow 0.3s, filter 0.3s;
   }
 
   #date {
@@ -88,6 +112,7 @@
     opacity: 0.85;
     text-align: center;
     text-transform: capitalize;
+    transition: text-shadow 0.3s, filter 0.3s;
   }
 
   /* Widget de Clima */
@@ -99,6 +124,7 @@
     gap: 8px;
     opacity: 0.9;
     text-align: center;
+    transition: text-shadow 0.3s, filter 0.3s;
   }
 
   /* Indicador visual de Alarma Activa */
@@ -112,6 +138,7 @@
     padding: 4px 12px;
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.15);
+    transition: text-shadow 0.3s, filter 0.3s;
   }
 
   /* Sugerencia de clima al cambio de hora */
@@ -314,14 +341,12 @@
   <div id="alarmIndicator" title="Alarma activa">⏰ <span id="alarmIndicatorTime">--:--</span></div>
 </div>
 
-<!-- Texto de sugerencia de clima flotante -->
 <div id="weatherSuggestion"></div>
 
 <div id="visitCounter" title="Contador de Visitas">👁️ Visitas: cargando...</div>
 
 <button id="stopAlarmBtn">🔕 Detener Alarma</button>
 
-<!-- Botones Flotantes -->
 <button id="castToggle" class="icon-btn" title="Transmitir a Smart TV">📺</button>
 <button id="shareToggle" class="icon-btn" title="Compartir Reloj">🔗</button>
 <button id="infoToggle" class="icon-btn" title="Información e Instrucciones">ℹ️</button>
@@ -429,7 +454,6 @@
   <button id="fullscreenBtn">⛶ Pantalla completa</button>
 </div>
 
-<!-- Modal de Información -->
 <div id="infoModal" class="modal-overlay">
   <div class="modal-content">
     <h2>Reloj Minimalista por LPaz</h2>
@@ -510,6 +534,7 @@
   let isRinging = false;
   let hideTimeout = null;
   let lastHour = new Date().getHours();
+  let lastMinute = new Date().getMinutes();
   let wakeLock = null;
   let vibrationInterval = null;
   let alarmInterval = null;
@@ -583,36 +608,30 @@
       return "¡Bienvenido! Que tengas una excelente hora. 🌟";
     }
 
-    // 0: Cielo despejado
     if (code === 0) {
       return isDay 
         ? "¡Día soleado y despejado! 😎 Recuerda usar gafas y bloqueador solar factor 30." 
         : "Noche totalmente despejada, ideal para salir a contemplar las estrellas. 🌌";
     }
     
-    // 1, 2, 3: Algo nublado / Cubierto
     if (code >= 1 && code <= 3) {
       return isDay 
         ? "El clima está algo nublado pero agradable. ⛅ ¡Buen momento para dar una caminata!" 
         : "Noche parcialmente nublada y fresca. 🌙☁️ Ideal para descansar.";
     }
       
-    // 45, 48: Niebla
     if (code === 45 || code === 48) {
       return "Hay niebla en la ciudad. 🌫️ Conduce con mucha precaución y mantén tus luces encendidas.";
     }
 
-    // 51 a 67: Lloviznas y lluvias
     if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
       return "Pronóstico de lluvia. ☔ ¡No olvides llevar tu paraguas o un buen impermeable!";
     }
     
-    // 71 a 77: Nieve
     if (code >= 71 && code <= 77) {
       return "¡Está cayendo nieve! ❄️ Abrígate muy bien y disfruta de una bebida caliente. ☕";
     }
     
-    // 95 a 99: Tormentas eléctricas
     if (code >= 95) {
       return "Alerta de tormenta eléctrica. ⛈️ Procura mantenerte resguardado en un lugar seguro. 🏠";
     }
@@ -633,11 +652,20 @@
       weatherSuggestion.style.opacity = '1';
     }
 
-    // Ocultar suavemente después de 1 minuto (60000ms)
     setTimeout(() => {
       wallpaperOverlay.style.opacity = '0';
       weatherSuggestion.style.opacity = '0';
     }, 60000);
+  }
+
+  // Activa el pulso de luz en todos los textos del reloj (solo un pulso)
+  function triggerMinutePulse() {
+    const elementsToPulse = [clock, date, weatherDiv, alarmIndicator];
+    elementsToPulse.forEach(el => {
+      el.classList.remove('light-pulse');
+      void el.offsetWidth; // Forzar reflow para reiniciar la animación
+      el.classList.add('light-pulse');
+    });
   }
 
   // Paleta de colores para cambio automático
@@ -931,12 +959,17 @@
     if (screenModeSel.value === 'clock') {
       let suffix = '';
       
+      // Cambio de minuto exacto (s === 0)
+      if (m !== lastMinute && s === 0) {
+        triggerMinutePulse();
+        lastMinute = m;
+      }
+
       // Cambio de hora exacto (00:00:00)
       if (h !== lastHour && m === 0 && s <= 1) {
         playCasioBeep(2048, 0.15);
         applyColorForHour(h);
         
-        // Actualizamos primero el clima y lanzamos los eventos asegurando que el dato sea fresco
         if (currentCityData) {
           updateWeatherData().then(() => {
             triggerHourlyEvents();
@@ -1253,6 +1286,5 @@
   updateClock();
   setInterval(updateClock, 1000);
 </script>
-
 </body>
 </html>
