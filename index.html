@@ -232,6 +232,7 @@
   }
   #settingsToggle { bottom: 20px; right: 20px; }
   #infoToggle { bottom: 20px; left: 20px; }
+  #repeatPhraseBtn { bottom: 85px; left: 20px; }
   #shareToggle { top: 20px; right: 20px; }
   #castToggle { top: 20px; left: 20px; }
 
@@ -396,6 +397,7 @@
 <button id="castToggle" class="icon-btn" title="Transmitir a Smart TV">📺</button>
 <button id="shareToggle" class="icon-btn" title="Compartir Reloj">🔗</button>
 <button id="infoToggle" class="icon-btn" title="Información e Instrucciones">ℹ️</button>
+<button id="repeatPhraseBtn" class="icon-btn" title="Repetir última frase desplegada">💬</button>
 <button id="settingsToggle" class="icon-btn" title="Ajustes">⚙️</button>
 
 <div class="controls" id="controls" aria-live="polite">
@@ -511,6 +513,7 @@
     <h2>Reloj Minimalista por LPaz</h2>
     <ul>
       <li><strong>✨ Frases para el Alma:</strong> Mensajes inspiradores que aparecen ordenadamente cada ~55 minutos acompañados de un pulso y un brillo dinámico.</li>
+      <li><strong>💬 Botón de Repetición:</strong> Permite volver a visualizar de inmediato la última frase del alma desplegada en pantalla.</li>
       <li><strong>💬 Sugerencia de Clima (1 min):</strong> Al cambiar la hora, el reloj te dará recomendaciones prácticas según cómo esté el tiempo afuera.</li>
       <li><strong>👁️ Contador Global de Visitas:</strong> Muestra en tiempo real la cantidad acumulada de accesos.</li>
       <li><strong>🖼️ Wallpaper de Clima (1 min):</strong> Fondo con imágenes HD acorde al tiempo actual al cambiar de hora.</li>
@@ -547,6 +550,7 @@
   const controls = document.getElementById('controls');
   const settingsToggle = document.getElementById('settingsToggle');
   const infoToggle = document.getElementById('infoToggle');
+  const repeatPhraseBtn = document.getElementById('repeatPhraseBtn');
   const shareToggle = document.getElementById('shareToggle');
   const castToggle = document.getElementById('castToggle');
   const infoModal = document.getElementById('infoModal');
@@ -582,7 +586,7 @@
   const fullscreenBtn = document.getElementById('fullscreenBtn');
   const toast = document.getElementById('toast');
 
-  // Listado de Frases para el Alma (26 frases en total -> aprox cada 55 min)
+  // Listado de Frases para el Alma
   const soulPhrasesList = [
     // 🌅 Para comenzar el día con claridad
     "Hoy tienes permiso para avanzar lento, pero avanzar igual.",
@@ -636,6 +640,8 @@
   let currentCityData = null;
   let currentWeatherCode = null;
   let isCurrentDay = true;
+  let lastDisplayedPhrase = "¡Bienvenido a tu Reloj Minimalista!";
+  let soulPhraseTimeout = null;
 
   // Estado Cronómetro y Temporizador
   let stopwatchTime = 0;
@@ -751,6 +757,25 @@
     }, 60000);
   }
 
+  // Mostrar Frase del Alma con su pulso y duración de 1 minuto
+  function showSoulPhrase(phraseText) {
+    lastDisplayedPhrase = phraseText;
+    soulPhrase.textContent = phraseText;
+    
+    soulPhrase.classList.remove('light-pulse', 'active');
+    void soulPhrase.offsetWidth; // Forzar reflow
+    
+    soulPhrase.classList.add('light-pulse');
+    soulPhrase.classList.add('active');
+
+    if (soulPhraseTimeout) clearTimeout(soulPhraseTimeout);
+
+    soulPhraseTimeout = setTimeout(() => {
+      soulPhrase.classList.remove('active');
+      soulPhrase.classList.remove('light-pulse');
+    }, 60000);
+  }
+
   // Activa el pulso de luz en todos los textos del reloj (solo un pulso)
   function triggerMinutePulse() {
     const elementsToPulse = [clock, date, weatherDiv, alarmIndicator];
@@ -760,22 +785,19 @@
       el.classList.add('light-pulse');
     });
 
-    // Control de la aparición de la Frase del Alma cada ~55 minutos
     if (soulPhraseToggleSel.value === 'on') {
       const now = new Date();
       const totalMinutesOfDay = now.getHours() * 60 + now.getMinutes();
       const phraseIndex = Math.floor(totalMinutesOfDay / 55.38) % soulPhrasesList.length;
-      
-      soulPhrase.textContent = soulPhrasesList[phraseIndex];
-      soulPhrase.classList.add('light-pulse');
-      soulPhrase.classList.add('active');
-
-      setTimeout(() => {
-        soulPhrase.classList.remove('active');
-        soulPhrase.classList.remove('light-pulse');
-      }, 60000);
+      showSoulPhrase(soulPhrasesList[phraseIndex]);
     }
   }
+
+  // Botón para repetir el último mensaje desplegado
+  repeatPhraseBtn.addEventListener('click', () => {
+    showSoulPhrase(lastDisplayedPhrase);
+    showToast('💬 Repitiendo última frase');
+  });
 
   // Paleta de colores para cambio automático
   const hourlyColors = [
